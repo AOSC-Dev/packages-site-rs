@@ -16,7 +16,6 @@ use serde::Serialize;
 use sqlx::{query, query_as, FromRow};
 use std::collections::{HashMap, HashSet};
 use std::iter::repeat;
-use tracing::info;
 
 pub async fn fallback(uri: Uri) -> impl IntoResponse {
     Error::NotFound(format!("No route for {}", uri))
@@ -485,7 +484,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     )
     .await?;
 
-    let ref packages = packages
+    let packages = &packages
         .into_iter()
         .map(|pkg| {
             let desc_highlight = html_escape::encode_safe(&pkg.desc_highlight)
@@ -570,8 +569,8 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, q: Query, db: Ext) -> Result<impl I
 }
 
 typed_path!("/updates", Updates);
-pub async fn updates(_: Updates,q:Query, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow,Serialize)]
+pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(FromRow, Serialize)]
     struct Package {
         name: String,
         dpkg_version: String,
@@ -581,7 +580,7 @@ pub async fn updates(_: Updates,q:Query, db: Ext) -> Result<impl IntoResponse> {
         ver_compare: i64,
     }
 
-    #[derive(Template,Serialize)]
+    #[derive(Template, Serialize)]
     #[template(path = "updates.html")]
     struct Template<'a> {
         packages: &'a Vec<Package>,
@@ -1206,22 +1205,22 @@ pub async fn qa(_: RouteQa) -> impl IntoResponse {
 }
 
 typed_path!("/qa/", Qa);
-pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
-    #[derive(Debug,Serialize)]
+pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(Debug, Serialize)]
     struct Package {
         package: String,
         version: String,
         errs: Vec<i32>,
     }
 
-    #[derive(Debug,Serialize)]
+    #[derive(Debug, Serialize)]
     struct SrcIssuesMatrixRow {
         tree: String,
         branch: String,
         issues: Vec<Issue>,
     }
 
-    #[derive(Debug,Serialize)]
+    #[derive(Debug, Serialize)]
     struct DebIssuesMatrixRow {
         arch: String,
         branch: String,
@@ -1229,7 +1228,7 @@ pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
         issues: Vec<Issue>,
     }
 
-    #[derive(Debug, Default,Serialize)]
+    #[derive(Debug, Default, Serialize)]
     struct Issue {
         errno: i32,
         cnt: i64,
@@ -1251,7 +1250,7 @@ pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
         errs: Vec<i32>,
     }
 
-    #[derive(Template, Debug,Serialize)]
+    #[derive(Template, Debug, Serialize)]
     #[template(path = "qa_index.html")]
     struct Template<'a> {
         total: i64,
@@ -1342,7 +1341,7 @@ pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
     }
 
     let srcissues_key = srcissues_key.into_iter().sorted().collect_vec();
-    let ref srcissues_matrix = tree_branches
+    let srcissues_matrix = &tree_branches
         .iter()
         .filter_map(|r| {
             if let Some(errs) = src_issues.get(&(r.tree.clone(), r.branch.clone())) {
@@ -1374,7 +1373,7 @@ pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
         .collect_vec();
 
     let debissues_key = debissues_key.into_iter().sorted().collect_vec();
-    let ref debissues_matrix = repos
+    let debissues_matrix = &repos
         .values()
         .filter_map(|r| {
             if let Some(errs) = deb_issues.get(&(&r.architecture, &r.branch)) {
@@ -1441,7 +1440,10 @@ pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
         debissues_matrix,
     };
 
-    let ctx_tsv = TemplateTsv { srcissues_matrix, debissues_matrix };
+    let ctx_tsv = TemplateTsv {
+        srcissues_matrix,
+        debissues_matrix,
+    };
 
     render(ctx, Some(ctx_tsv), q)
 }
@@ -1906,7 +1908,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         .map(|(k, v)| (k, v.collect_vec()))
         .collect();
 
-    let ref revdeps = DEP_REL_REV
+    let revdeps = &DEP_REL_REV
         .iter()
         .filter_map(|(relationship, description)| {
             if let Some(deps) = deps_map.get(relationship) {

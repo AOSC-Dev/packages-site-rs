@@ -104,7 +104,7 @@ pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse
                 let body = ctx_tsv.into_response();
                 build_resp(mime_guess::mime::TEXT_PLAIN.as_ref(), body).into_response()
             } else {
-                Error::NotSupported(format!("cannot render current page into tsv format"))
+                Error::NotSupported("cannot render current page into tsv format".to_string())
                     .into_response()
             }
         }
@@ -383,7 +383,7 @@ pub trait QueryTrait {
 impl QueryTrait for Query {
     fn get_type(&self) -> Option<&str> {
         if let Some(inner) = self {
-            inner.r#type.as_ref().map(|t| t.as_str())
+            inner.r#type.as_deref()
         } else {
             None
         }
