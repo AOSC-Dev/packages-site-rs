@@ -1576,8 +1576,6 @@ pub async fn qa_package(QaPkg { name }: QaPkg, db: Ext) -> Result<impl IntoRespo
         .fetch_all(&db.pg)
         .await?;
 
-    info!("{issues:#?}");
-
     let errno_examples = issues
         .iter()
         .group_by(|i| (i.errno, &i.version, &i.repo))
@@ -1643,7 +1641,6 @@ pub async fn qa_package(QaPkg { name }: QaPkg, db: Ext) -> Result<impl IntoRespo
                             } else {
                                 filename.to_string()
                             };
-                            info!("{errno} {}", filename);
 
                             if let (Some(repo), Some(version)) = (get("repo"), get("version")) {
                                 files_bypkg
