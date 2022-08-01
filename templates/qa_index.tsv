@@ -1,0 +1,10 @@
+Repo	Branch	Code	Count
+{% for row in srcissues_matrix -%}
+{% for col in row.issues -%}
+{{ row.tree }}	{{ row.branch }}	{{ col.errno }}	{{ col.cnt }}
+{% endfor %}
+{%- endfor %}{% for row in debissues_matrix -%}
+{% for col in row.issues -%}
+{{ row.arch }}	{{ row.branch }}	{{ col.errno }}	{{ col.cnt }}
+{% endfor %}
+{%- endfor %}

@@ -1,0 +1,4 @@
+Package	Version	Version Comparison	Description
+{% for pkg in packages -%}
+{{ pkg.name }}	{{ pkg.dpkg_version }}	{{ pkg.ver_compare }}	{{ pkg.description }}
+{% endfor %}

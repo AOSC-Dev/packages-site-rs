@@ -10,6 +10,7 @@ use axum::Extension;
 use indexmap::IndexMap;
 use regex::Regex;
 use serde::Deserialize;
+use serde::Serialize;
 use sqlx::query_as;
 use sqlx::FromRow;
 use std::collections::HashMap;
@@ -49,6 +50,8 @@ where
 pub enum Error {
     #[error("404 Not Found: {0}")]
     NotFound(String),
+    #[error("Not Supported: {0}")]
+    NotSupported(String),
     #[error(transparent)]
     Http(#[from] axum::http::Error),
     #[error(transparent)]
@@ -85,10 +88,34 @@ macro_rules! not_found {
     ($($arg:tt)*) => {
         Err(Error::NotFound(format!($($arg)*)))
     };
-}
+  }
 
 pub(crate) use not_found;
 pub(crate) use typed_path;
+
+pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse>(
+    ctx: T,
+    ctx_tsv: Option<V>,
+    q: Query,
+) -> Result<Response> {
+    Ok(match q.get_type() {
+        Some("tsv") => {
+            if let Some(ctx_tsv) = ctx_tsv {
+                let body = ctx_tsv.into_response();
+                build_resp(mime_guess::mime::TEXT_PLAIN.as_ref(), body).into_response()
+            } else {
+                Error::NotSupported(format!("cannot render current page into tsv format"))
+                    .into_response()
+            }
+        }
+        Some("json") => build_resp(
+            mime_guess::mime::JSON.as_ref(),
+            serde_json::to_string(&ctx)?,
+        )
+        .into_response(),
+        _ => ctx.into_response(),
+    })
+}
 
 /// askama user defined filters
 pub mod filters {
@@ -339,6 +366,7 @@ pub struct QueryInner {
     noredir: Option<bool>,
     section: Option<String>,
     reason: Option<String>,
+    r#type: Option<String>,
 }
 
 pub type Query = Option<axum::extract::Query<QueryInner>>;
@@ -349,9 +377,17 @@ pub trait QueryTrait {
     fn get_noredir(&self) -> bool;
     fn get_section(&self) -> Option<String>;
     fn get_reason(&self) -> Option<String>;
+    fn get_type(&self) -> Option<&str>;
 }
 
 impl QueryTrait for Query {
+    fn get_type(&self) -> Option<&str> {
+        if let Some(inner) = self {
+            inner.r#type.as_ref().map(|t| t.as_str())
+        } else {
+            None
+        }
+    }
     fn get_page(&self) -> Option<u32> {
         if let Some(inner) = self {
             if let Some(ref page) = inner.page {

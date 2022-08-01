@@ -1,0 +1,8 @@
+{% if headers %}{{ headers|join('\t') }}
+{% for row in rows %}{% for v in row %}{% if loop.index > 1 %}	{% endif %}{% if v is none -%}null
+  {%- elif v is blob -%}[blob]
+  {%- else -%}{{ v }}
+  {%- endif %}{%- endfor %}
+{% endfor %}{% else %}Error
+{{ error }}
+{% endif %}

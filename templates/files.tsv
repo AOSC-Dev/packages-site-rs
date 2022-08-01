@@ -1,0 +1,4 @@
+perm	uname	uid	gname	gid	size	filename
+{% for file in files -%}
+{{ file.perm|ls_perm(file.ftype) }}	{{ file.uname }}	{{ file.uid }}	{{ file.gname }}	{{ file.gid }}	{{ file.size }}	{{ file.filename|fmt_default }}
+{% endfor %}

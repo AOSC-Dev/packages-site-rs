@@ -178,29 +178,35 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
 }
 
 typed_path!("/lagging/*repo", Lagging, repo);
-pub async fn lagging(Lagging { repo }: Lagging, page: Query, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow, Debug)]
+pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(FromRow, Debug, Serialize)]
     struct Package {
         name: String,
         dpkg_version: String,
         full_version: String,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "lagging.html")]
-    struct Template {
+    struct Template<'a> {
         page: Page,
         repo: String,
-        packages: Vec<Package>,
+        packages: &'a Vec<Package>,
+    }
+
+    #[derive(Template)]
+    #[template(path = "lagging.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<Package>,
     }
 
     let repo = strip_prefix(&repo)?;
     let architecture = get_repo(repo, &db).await?.architecture;
 
-    let (page, packages) = get_page!(
+    let (page, ref packages) = get_page!(
         SQL_GET_PACKAGE_LAGGING,
         Package,
-        page.get_page(),
+        q.get_page(),
         &db.abbs,
         repo,
         architecture
@@ -216,35 +222,44 @@ pub async fn lagging(Lagging { repo }: Lagging, page: Query, db: Ext) -> Result<
         repo: repo.to_string(),
         packages,
     };
-    Ok(ctx)
+
+    let ctx_tsv = TemplateTsv { packages };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/missing/*repo", Missing, repo);
-pub async fn missing(Missing { repo }: Missing, page: Query, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow, Debug)]
+pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(FromRow, Debug, Serialize)]
     struct Package {
         name: String,
-        // description: String,
+        description: String,
         full_version: String,
-        // dpkg_version: String,
-        // tree_category: String,
+        dpkg_version: String,
+        tree_category: String,
+    }
+
+    #[derive(Template, Serialize)]
+    #[template(path = "missing.html")]
+    struct Template<'a> {
+        page: Page,
+        repo: String,
+        packages: &'a Vec<Package>,
     }
 
     #[derive(Template)]
-    #[template(path = "missing.html")]
-    struct Template {
-        page: Page,
-        repo: String,
-        packages: Vec<Package>,
+    #[template(path = "missing.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<Package>,
     }
 
     let repo = strip_prefix(&repo)?;
     let repo = get_repo(repo, &db).await?;
 
-    let (page, packages) = get_page!(
+    let (page, ref packages) = get_page!(
         SQL_GET_PACKAGE_MISSING,
         Package,
-        page.get_page(),
+        q.get_page(),
         &db.abbs,
         &repo.realname,
         &repo.architecture,
@@ -262,15 +277,13 @@ pub async fn missing(Missing { repo }: Missing, page: Query, db: Ext) -> Result<
         packages,
     };
 
-    Ok(ctx)
+    let ctx_tsv = TemplateTsv { packages };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/tree/:tree", RouteTree, tree);
-pub async fn tree(
-    RouteTree { tree }: RouteTree,
-    page: Query,
-    db: Ext,
-) -> Result<impl IntoResponse> {
+pub async fn tree(RouteTree { tree }: RouteTree, q: Query, db: Ext) -> Result<impl IntoResponse> {
     get_tree(&tree, &db).await?;
 
     #[derive(FromRow, Debug)]
@@ -278,42 +291,43 @@ pub async fn tree(
         name: String,
         dpkg_version: String,
         dpkg_availrepos: String,
-        //description: String,
+        description: String,
         full_version: String,
         ver_compare: i64,
     }
 
+    #[derive(Debug, Serialize)]
     struct TemplatePackage {
         name: String,
         dpkg_version: String,
         dpkg_repos: String,
-        //description: String,
+        description: String,
         full_version: String,
         ver_compare: i64,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "tree.html")]
-    struct Template {
+    struct Template<'a> {
         page: Page,
         tree: String,
-        packages: Vec<TemplatePackage>,
+        packages: &'a Vec<TemplatePackage>,
     }
 
-    let (page, packages) = get_page!(
-        SQL_GET_PACKAGE_TREE,
-        Package,
-        page.get_page(),
-        &db.abbs,
-        &tree
-    )
-    .await?;
+    #[derive(Template)]
+    #[template(path = "tree.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<TemplatePackage>,
+    }
+
+    let (page, packages) =
+        get_page!(SQL_GET_PACKAGE_TREE, Package, q.get_page(), &db.abbs, &tree).await?;
 
     if packages.is_empty() {
         return not_found!("There's no packages.");
     }
 
-    let packages = packages
+    let packages = &packages
         .into_iter()
         .map(|package| {
             let mut repos: Vec<_> = package.dpkg_availrepos.split(',').collect();
@@ -324,7 +338,7 @@ pub async fn tree(
                 name: package.name,
                 dpkg_version: package.dpkg_version,
                 dpkg_repos,
-                //description: package.description,
+                description: package.description,
                 full_version: package.full_version,
                 ver_compare: package.ver_compare,
             }
@@ -337,32 +351,40 @@ pub async fn tree(
         packages,
     };
 
-    Ok(ctx)
+    let ctx_tsv = TemplateTsv { packages };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/ghost/*repo", Ghost, repo);
-pub async fn ghost(Ghost { repo }: Ghost, page: Query, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(Debug, FromRow)]
+pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(Debug, FromRow, Serialize)]
     struct Package {
         name: String,
         dpkg_version: String,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "ghost.html")]
-    struct Template {
-        packages: Vec<Package>,
+    struct Template<'a> {
+        packages: &'a Vec<Package>,
         repo: String,
         page: Page,
+    }
+
+    #[derive(Template, Serialize)]
+    #[template(path = "ghost.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<Package>,
     }
 
     let repo = strip_prefix(&repo)?;
     get_repo(repo, &db).await?;
 
-    let (page, packages) = get_page!(
+    let (page, ref packages) = get_page!(
         SQL_GET_PACKAGE_GHOST,
         Package,
-        page.get_page(),
+        q.get_page(),
         &db.abbs,
         &repo
     )
@@ -377,8 +399,9 @@ pub async fn ghost(Ghost { repo }: Ghost, page: Query, db: Ext) -> Result<impl I
         repo: repo.to_string(),
         page,
     };
+    let ctx_tsv = TemplateTsv { packages };
 
-    Ok(ctx)
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/search", Search);
@@ -387,35 +410,43 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     struct Package {
         full_version: String,
         desc_highlight: String,
-        // description: String,
+        description: String,
         name: String,
     }
 
-    #[derive(FromRow)]
+    #[derive(FromRow, Serialize)]
     struct PackageTemplate {
         name_highlight: String,
         full_version: String,
         desc_highlight: String,
-        // description: String,
+        description: String,
         name: String,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "search.html")]
-    struct Template {
+    struct Template<'a> {
         q: String,
-        packages: Vec<PackageTemplate>,
+        packages: &'a Vec<PackageTemplate>,
         page: Page,
+    }
+
+    #[derive(Template)]
+    #[template(path = "search.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<PackageTemplate>,
     }
 
     let q = query.get_query();
     if q.is_none() {
         let ctx = Template {
             q: "".to_string(),
-            packages: vec![],
+            packages: &vec![],
             page: Page::default(),
         };
-        return Ok(ctx.into_response());
+        let ctx_tsv = TemplateTsv { packages: &vec![] };
+
+        return render(ctx, Some(ctx_tsv), query);
     }
     let q = q.unwrap();
 
@@ -454,7 +485,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     )
     .await?;
 
-    let packages = packages
+    let ref packages = packages
         .into_iter()
         .map(|pkg| {
             let desc_highlight = html_escape::encode_safe(&pkg.desc_highlight)
@@ -469,20 +500,21 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
                 name_highlight,
                 full_version: pkg.full_version,
                 desc_highlight,
-                // description: pkg.description,
+                description: pkg.description,
                 name: pkg.name,
             }
         })
         .collect();
 
     let ctx = Template { q, packages, page };
+    let ctx_tsv = TemplateTsv { packages };
 
-    Ok(ctx.into_response())
+    render(ctx, Some(ctx_tsv), query)
 }
 
 typed_path!("/srcupd/:tree", Srcupd, tree);
-pub async fn srcupd(Srcupd { tree }: Srcupd, query: Query, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow)]
+pub async fn srcupd(Srcupd { tree }: Srcupd, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(FromRow, Serialize)]
     struct Package {
         name: String,
         version: String,
@@ -492,22 +524,28 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, query: Query, db: Ext) -> Result<im
         //upstream_tarball: String,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "srcupd.html")]
-    struct Template {
+    struct Template<'a> {
         page: Page,
-        packages: Vec<Package>,
+        packages: &'a Vec<Package>,
         tree: String,
         section: String,
     }
 
-    get_tree(&tree, &db).await?;
-    let section = query.get_section();
+    #[derive(Template)]
+    #[template(path = "srcupd.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<Package>,
+    }
 
-    let (page, packages) = get_page!(
+    get_tree(&tree, &db).await?;
+    let section = q.get_section();
+
+    let (page, ref packages) = get_page!(
         SQL_GET_PACKAGE_SRCUPD,
         Package,
-        query.get_page(),
+        q.get_page(),
         &db.abbs,
         &tree,
         &section,
@@ -526,28 +564,36 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, query: Query, db: Ext) -> Result<im
         section: section.unwrap_or_default(),
     };
 
-    Ok(ctx)
+    let ctx_tsv = TemplateTsv { packages };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/updates", Updates);
-pub async fn updates(_: Updates, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow)]
+pub async fn updates(_: Updates,q:Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(FromRow,Serialize)]
     struct Package {
         name: String,
         dpkg_version: String,
-        // description: String,
+        description: String,
         full_version: String,
-        // commit_time: i64,
+        commit_time: i64,
         ver_compare: i64,
     }
 
-    #[derive(Template)]
+    #[derive(Template,Serialize)]
     #[template(path = "updates.html")]
-    struct Template {
-        packages: Vec<Package>,
+    struct Template<'a> {
+        packages: &'a Vec<Package>,
     }
 
-    let packages: Vec<Package> = query_as(SQL_GET_PACKAGE_NEW_LIST)
+    #[derive(Template)]
+    #[template(path = "updates.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<Package>,
+    }
+
+    let packages: &Vec<Package> = &query_as(SQL_GET_PACKAGE_NEW_LIST)
         .bind(100)
         .fetch_all(&db.abbs)
         .await?;
@@ -557,8 +603,9 @@ pub async fn updates(_: Updates, db: Ext) -> Result<impl IntoResponse> {
     }
 
     let ctx = Template { packages };
+    let ctx_tsv = TemplateTsv { packages };
 
-    Ok(ctx)
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/", Index);
@@ -615,11 +662,7 @@ pub async fn index(_: Index, db: Ext) -> Result<impl IntoResponse> {
 }
 
 typed_path!("/repo/*repo", RouteRepo, repo);
-pub async fn repo(
-    RouteRepo { repo }: RouteRepo,
-    query: Query,
-    db: Ext,
-) -> Result<impl IntoResponse> {
+pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow)]
     struct Package {
         name: String,
@@ -628,6 +671,7 @@ pub async fn repo(
         description: String,
     }
 
+    #[derive(Serialize)]
     struct PackageTemplate {
         ver_compare: i64,
         name: String,
@@ -635,27 +679,27 @@ pub async fn repo(
         description: String,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "repo.html")]
-    struct Template {
-        packages: Vec<PackageTemplate>,
+    struct Template<'a> {
+        packages: &'a Vec<PackageTemplate>,
         repo: String,
         page: Page,
+    }
+
+    #[derive(Template, Serialize)]
+    #[template(path = "repo.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a Vec<PackageTemplate>,
     }
 
     let repo = strip_prefix(&repo)?;
     get_repo(repo, &db).await?;
 
-    let (page, packages) = get_page!(
-        SQL_GET_PACKAGE_REPO,
-        Package,
-        query.get_page(),
-        &db.abbs,
-        repo
-    )
-    .await?;
+    let (page, packages) =
+        get_page!(SQL_GET_PACKAGE_REPO, Package, q.get_page(), &db.abbs, repo).await?;
 
-    let packages: Vec<_> = packages
+    let packages = &packages
         .into_iter()
         .map(|pkg| {
             let (latest, fullver) = (pkg.dpkg_version, pkg.full_version);
@@ -677,7 +721,7 @@ pub async fn repo(
                 description: pkg.description,
             }
         })
-        .collect();
+        .collect_vec();
 
     let ctx = Template {
         packages,
@@ -685,7 +729,9 @@ pub async fn repo(
         page,
     };
 
-    Ok(ctx)
+    let ctx_tsv = TemplateTsv { packages };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/packages/:name", RoutePackage, name);
@@ -1041,11 +1087,12 @@ pub async fn files(
         name,
         version,
     }: Files,
+    q: Query,
     db: Ext,
 ) -> Result<impl IntoResponse> {
     let repo = format!("{reponame}/{branch}");
 
-    #[derive(Debug, FromRow)]
+    #[derive(Debug, FromRow, Serialize)]
     struct Package {
         package: String,
         version: String,
@@ -1069,7 +1116,7 @@ pub async fn files(
         soname: Option<String>,
     }
 
-    #[derive(Debug, FromRow)]
+    #[derive(Debug, FromRow, Serialize)]
     struct File {
         filename: Option<String>,
         size: i64,
@@ -1081,14 +1128,20 @@ pub async fn files(
         gname: String,
     }
 
-    #[derive(Template, Debug)]
+    #[derive(Template, Debug, Serialize)]
     #[template(path = "files.html")]
-    struct Template {
-        files: Vec<File>,
+    struct Template<'a> {
+        files: &'a Vec<File>,
         sodepends: Vec<String>,
         soprovides: Vec<String>,
         pkg_debtime: i32,
         pkg: Package,
+    }
+
+    #[derive(Template, Debug)]
+    #[template(path = "files.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        files: &'a Vec<File>,
     }
 
     let pkg: Option<Package> = query_as(SQL_GET_PACKAGE_DEB_LOCAL)
@@ -1108,7 +1161,7 @@ pub async fn files(
         .await?
         .map_or(0, |d: DebTime| d.debtime);
 
-    let files: Vec<File> = query_as(SQL_GET_PACKAGE_DEB_FILES)
+    let files: &Vec<File> = &query_as(SQL_GET_PACKAGE_DEB_FILES)
         .bind(&name)
         .bind(&version)
         .bind(&repo)
@@ -1142,7 +1195,9 @@ pub async fn files(
         pkg,
     };
 
-    Ok(ctx)
+    let ctx_tsv = TemplateTsv { files };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/qa", RouteQa);
@@ -1151,22 +1206,22 @@ pub async fn qa(_: RouteQa) -> impl IntoResponse {
 }
 
 typed_path!("/qa/", Qa);
-pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(Debug)]
+pub async fn qa_index(_: Qa,q: Query,db: Ext) -> Result<impl IntoResponse> {
+    #[derive(Debug,Serialize)]
     struct Package {
         package: String,
         version: String,
         errs: Vec<i32>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug,Serialize)]
     struct SrcIssuesMatrixRow {
         tree: String,
         branch: String,
         issues: Vec<Issue>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug,Serialize)]
     struct DebIssuesMatrixRow {
         arch: String,
         branch: String,
@@ -1174,7 +1229,7 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
         issues: Vec<Issue>,
     }
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default,Serialize)]
     struct Issue {
         errno: i32,
         cnt: i64,
@@ -1196,20 +1251,27 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
         errs: Vec<i32>,
     }
 
-    #[derive(Template, Debug)]
+    #[derive(Template, Debug,Serialize)]
     #[template(path = "qa_index.html")]
-    struct Template {
+    struct Template<'a> {
         total: i64,
         percent: f64,
         recent: Vec<Package>,
 
         srcissues_max: f64,
         srcissues_key: Vec<i32>,
-        srcissues_matrix: Vec<SrcIssuesMatrixRow>,
+        srcissues_matrix: &'a Vec<SrcIssuesMatrixRow>,
 
         debissues_max: f64,
         debissues_key: Vec<i32>,
-        debissues_matrix: Vec<DebIssuesMatrixRow>,
+        debissues_matrix: &'a Vec<DebIssuesMatrixRow>,
+    }
+
+    #[derive(Template, Debug)]
+    #[template(path = "qa_index.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        srcissues_matrix: &'a Vec<SrcIssuesMatrixRow>,
+        debissues_matrix: &'a Vec<DebIssuesMatrixRow>,
     }
 
     #[derive(Debug, FromRow)]
@@ -1279,13 +1341,12 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
         }
     }
 
-    let mut srcissues_key: Vec<_> = srcissues_key.into_iter().collect();
-    srcissues_key.sort();
-    let srcissues_matrix: Vec<_> = tree_branches
+    let srcissues_key = srcissues_key.into_iter().sorted().collect_vec();
+    let ref srcissues_matrix = tree_branches
         .iter()
         .filter_map(|r| {
             if let Some(errs) = src_issues.get(&(r.tree.clone(), r.branch.clone())) {
-                let issues: Vec<_> = srcissues_key
+                let issues = srcissues_key
                     .iter()
                     .map(|err| {
                         if let Some((cnt, ratio)) = errs.get(err) {
@@ -1298,7 +1359,7 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
                             Issue::default()
                         }
                     })
-                    .collect();
+                    .collect_vec();
 
                 let row = SrcIssuesMatrixRow {
                     tree: r.tree.clone(),
@@ -1310,11 +1371,10 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
                 None
             }
         })
-        .collect();
+        .collect_vec();
 
-    let mut debissues_key: Vec<_> = debissues_key.into_iter().collect();
-    debissues_key.sort();
-    let debissues_matrix: Vec<_> = repos
+    let debissues_key = debissues_key.into_iter().sorted().collect_vec();
+    let ref debissues_matrix = repos
         .values()
         .filter_map(|r| {
             if let Some(errs) = deb_issues.get(&(&r.architecture, &r.branch)) {
@@ -1349,7 +1409,7 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
                 None
             }
         })
-        .collect();
+        .collect_vec();
 
     // recent packages
     let recent: Vec<Package> = query_as(SQL_ISSUES_RECENT)
@@ -1381,7 +1441,9 @@ pub async fn qa_index(_: Qa, db: Ext) -> Result<impl IntoResponse> {
         debissues_matrix,
     };
 
-    Ok(ctx)
+    let ctx_tsv = TemplateTsv { srcissues_matrix, debissues_matrix };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/qa/code/:code", QaCode, code);
@@ -1395,7 +1457,7 @@ pub async fn qa_repo(QaRepo { code, repo }: QaRepo, q: Query, db: Ext) -> Result
 }
 
 async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -> Result<Response> {
-    #[derive(Debug, FromRow)]
+    #[derive(Debug, FromRow, Serialize)]
     struct Package {
         name: String,
         versions: Vec<String>,
@@ -1404,7 +1466,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
         filecount: i64,
     }
 
-    #[derive(Debug, Template)]
+    #[derive(Debug, Template, Serialize)]
     #[template(path = "qa_code.html")]
     struct Template<'a> {
         code: i32,
@@ -1412,6 +1474,12 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
         description: String,
         packages: &'a [Package],
         page: Page,
+    }
+
+    #[derive(Debug, Template)]
+    #[template(path = "qa_code.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        packages: &'a [Package],
     }
 
     let repo = if let Some(repo) = repo {
@@ -1480,7 +1548,9 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
         page,
     };
 
-    Ok(ctx.into_response())
+    let ctx_tsv = TemplateTsv { packages: pkgs };
+
+    render(ctx, Some(ctx_tsv), q)
 }
 
 typed_path!("/qa/packages/:name", QaPkg, name);
@@ -1777,7 +1847,7 @@ pub async fn cleanmirror(
 }
 
 typed_path!("/revdep/:name", Revdep, name);
-pub async fn revdep(Revdep { name }: Revdep, db: Ext) -> Result<impl IntoResponse> {
+pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let res = query("SELECT 1 FROM packages WHERE name = ?")
         .bind(&name)
         .fetch_optional(&db.abbs)
@@ -1786,7 +1856,7 @@ pub async fn revdep(Revdep { name }: Revdep, db: Ext) -> Result<impl IntoRespons
         return not_found!("Package \"{name}\" not found.");
     }
 
-    #[derive(Debug, FromRow)]
+    #[derive(Debug, FromRow, Serialize)]
     struct RevDep {
         package: String,
         version: String,
@@ -1794,19 +1864,28 @@ pub async fn revdep(Revdep { name }: Revdep, db: Ext) -> Result<impl IntoRespons
         architecture: String,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize)]
     struct TemplateRevDep<'a> {
         description: &'a String,
         deps: Vec<&'a &'a RevDep>,
     }
 
-    #[derive(Debug, Template)]
+    #[derive(Debug, Template, Serialize)]
     #[template(path = "revdep.html")]
     struct Template<'a> {
         name: &'a String,
-        revdeps: Vec<TemplateRevDep<'a>>,
-        sobreaks: Vec<Vec<String>>,
-        sobreaks_circular: Vec<String>,
+
+        revdeps: &'a Vec<TemplateRevDep<'a>>,
+        sobreaks: &'a Vec<Vec<String>>,
+        sobreaks_circular: &'a Vec<String>,
+    }
+
+    #[derive(Debug, Template, Serialize)]
+    #[template(path = "revdep.tsv", escape = "none")]
+    struct TemplateTsv<'a> {
+        revdeps: &'a Vec<TemplateRevDep<'a>>,
+        sobreaks: &'a Vec<Vec<String>>,
+        sobreaks_circular: &'a Vec<String>,
     }
 
     #[derive(Debug, FromRow)]
@@ -1827,7 +1906,7 @@ pub async fn revdep(Revdep { name }: Revdep, db: Ext) -> Result<impl IntoRespons
         .map(|(k, v)| (k, v.collect_vec()))
         .collect();
 
-    let revdeps = DEP_REL_REV
+    let ref revdeps = DEP_REL_REV
         .iter()
         .filter_map(|(relationship, description)| {
             if let Some(deps) = deps_map.get(relationship) {
@@ -1893,7 +1972,7 @@ pub async fn revdep(Revdep { name }: Revdep, db: Ext) -> Result<impl IntoRespons
         (sobreaks, circular)
     };
 
-    let (sobreaks, sobreaks_circular) = toposort(sobreaks);
+    let (ref sobreaks, ref sobreaks_circular) = toposort(sobreaks);
 
     let ctx = Template {
         name: &name,
@@ -1902,5 +1981,11 @@ pub async fn revdep(Revdep { name }: Revdep, db: Ext) -> Result<impl IntoRespons
         sobreaks_circular,
     };
 
-    Ok(ctx.into_response())
+    let ctx_tsv = TemplateTsv {
+        revdeps,
+        sobreaks,
+        sobreaks_circular,
+    };
+
+    render(ctx, Some(ctx_tsv), q)
 }

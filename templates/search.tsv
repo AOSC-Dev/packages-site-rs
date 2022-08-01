@@ -1,0 +1,4 @@
+Package	Version	Description
+{% for pkg in packages -%}
+{{ pkg.name }}	{{ pkg.full_version }}	{{ pkg.description }}
+{% endfor %}

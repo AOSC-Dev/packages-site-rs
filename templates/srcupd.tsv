@@ -1,0 +1,4 @@
+Package	Spec Version	Upstream Version	Update Time	URL
+{% for pkg in packages -%}
+{{ pkg.name }}	{{ pkg.version }}	{{ pkg.upstream_version }}	{{ pkg.updated|strftime("[year]-[month]-[day] [hour]:[minute]:[second]") }}	{{ pkg.upstream_url }}
+{% endfor %}

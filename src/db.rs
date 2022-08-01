@@ -1,6 +1,7 @@
 use crate::config::Config;
 use anyhow::Result;
 use once_cell::sync::OnceCell;
+use serde::Serialize;
 use sqlx::{pool::PoolOptions, Executor, Pool, Postgres, Sqlite, SqliteConnection};
 
 pub struct Db {
@@ -44,7 +45,7 @@ impl Db {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Page {
     pub cur: u32,
     pub max: u32,

@@ -1,0 +1,4 @@
+Package	DPKG Version
+{% for pkg in packages -%}
+{{ pkg.name }}	{{ pkg.dpkg_version }}
+{% endfor %}
