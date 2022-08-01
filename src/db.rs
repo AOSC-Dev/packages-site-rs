@@ -74,7 +74,7 @@ macro_rules! get_page {
                 match rows {
                     Ok(rows) => {
                         let page = crate::db::Page {
-                            cur:cur,
+                            cur,
                             max:ceil(count,PAGESIZE),
                             count,
                         };
