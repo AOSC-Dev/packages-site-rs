@@ -36,6 +36,7 @@ macro_rules! typed_path {
     }
 }
 
+#[inline(always)]
 pub fn build_resp<V, T>(mime: V, body: T) -> Result<Response<T>>
 where
     HeaderValue: TryFrom<V>,
@@ -93,6 +94,7 @@ macro_rules! not_found {
 pub(crate) use not_found;
 pub(crate) use typed_path;
 
+#[inline]
 pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse>(
     ctx: T,
     ctx_tsv: Option<V>,
@@ -381,6 +383,7 @@ pub trait QueryTrait {
 }
 
 impl QueryTrait for Query {
+    #[inline(always)]
     fn get_type(&self) -> Option<&str> {
         if let Some(inner) = self {
             inner.r#type.as_deref()
@@ -388,6 +391,7 @@ impl QueryTrait for Query {
             None
         }
     }
+    #[inline(always)]
     fn get_page(&self) -> Option<u32> {
         if let Some(inner) = self {
             if let Some(ref page) = inner.page {
@@ -464,7 +468,7 @@ pub async fn db_last_modified(db: Ext) -> Result<i64> {
     Ok(res.map(|t| t.commit_time).unwrap_or_default())
 }
 
-#[derive(FromRow, Debug, Clone)]
+#[derive(FromRow, Debug, Clone, Serialize)]
 #[allow(unused)]
 pub struct Repo {
     pub name: String,
@@ -492,7 +496,7 @@ pub async fn db_repos(db: &Ext) -> Result<IndexMap<String, Repo>> {
     Ok(res)
 }
 
-#[derive(FromRow, Debug, Clone)]
+#[derive(FromRow, Debug, Clone, Serialize)]
 #[allow(unused)]
 pub struct Tree {
     pub name: String,
@@ -532,7 +536,7 @@ pub fn ver_rel(ver_compare: i64) -> &'static str {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Dependency {
     pub relationship: String,
     pub arch: String,
