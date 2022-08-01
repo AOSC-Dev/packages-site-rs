@@ -1,0 +1,25 @@
+{%- import "pagination.inc.macros.html" as macro -%}
+
+{% extends "base.html" %}
+{% block title %}{{ repo }} - AOSC OS Packages{% endblock %}
+{% block banner %}<h1>{{ repo }}</h1>
+<p class="description"><span class="num">{{ page.count }} packages in "{{ repo }}".</span></p>
+{% endblock %}
+{% block main %}
+<table class="packages">
+<tbody>
+{% for pkg in packages -%}
+  <tr>
+    <td class="pkg-name">
+      <a href="/packages/{{ pkg.name }}">{{ pkg.name }}</a>
+    </td>
+    <td class="pkg-version dpkg-ver-{{ pkg.ver_compare|fmt_ver_compare }}">
+      {{ pkg.dpkg_version }}</td>
+    <td class="pkg-description">{{ pkg.description }}</td>
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+{% include "legend.inc.html" %}
+{% include "pagination.inc.html" %}
+{% endblock main %}

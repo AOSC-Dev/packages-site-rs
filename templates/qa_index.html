@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}QA - AOSC OS Packages{% endblock %}
+{% block extraheader -%}
+<link rel="canonical" href="https://packages.aosc.io/qa/">
+{%- endblock %}
+{% block navpath %}<li class="nav-path"><a href="/qa/">QA</a></li>{% endblock %}
+{% block banner %}<h1>Package Quality Assurance</h1>
+<p class="description">There are <span class="num">{{ total }}</span> (<span class="num">{{ "{:.2}"|format(percent*100.0) }}</span>%) package{% if total > 1 %}s{% endif %} with problems. See also: <a href="code/">Issue code definition</a></p>
+{% endblock %}
+{% block main %}
+<h2>Recent Unresolved Problems</h2>
+<table class="packages narrow">
+<tbody>
+{% for pkg in recent -%}
+  <tr>
+    <td class="pkg-name">
+      <a href="/qa/packages/{{ pkg.package }}">{{ pkg.package }}</a>
+    </td>
+    <td class="pkg-version">{{ pkg.version }}</td>
+    <td class="pkg-description">{% for code in pkg.errs %}
+      <a href="/qa/packages/{{ pkg.package }}#{{ code }}"  title="{{ code|fmt_issue_code }}">{{ code }}</a>
+    {%- endfor %}</td>
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+
+<h2>Problems in Source Trees</h2>
+<div class="table-wrapper">
+<table class="packages narrow">
+<thead>
+<tr>
+  <th><span>Tree</span></th>
+  <th><span>Branch</span></th>
+  {% for code in srcissues_key -%}
+  <th class="num"><span title="{{ code|fmt_issue_code }}">
+    <a href="code/{{ code }}">{{ code }}</a></span></th>
+  {%- endfor %}
+</tr>
+</thead>
+<tbody>
+{% for row in srcissues_matrix -%}
+  <tr class="repo-row">
+    <td>{{ row.tree }}</td>
+    <td>{{ row.branch }}</td>
+    {% for col in row.issues -%}
+    <td class="repo-pkgcount num" {% if (srcissues_max!=0.0) & (col.cnt !=0) -%} style="background-color:hsl(17,100%,{{ col.ratio|calc_color_ratio(srcissues_max) }}%)"  title="{{ "{:.1}%"|format(100.0*col.ratio) }}"{%- endif %}>{% if col.cnt!=0 -%}
+      <a href="code/{{ col.errno }}/{{ row.tree }}/{{ row.branch }}">
+        {{ col.cnt }}</a>
+    {%- else -%}{{ col.cnt }}{%- endif %}</td>
+    {%- endfor %}
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+</div>
+
+<h2>Problems in Binary Packages</h2>
+<div class="table-wrapper">
+<table class="packages">
+<thead>
+<tr>
+  <th><span>Repository</span></th>
+  <th><span>Branch</span></th>
+  <th class="num"><span>Old</span></th>
+  {% for code in debissues_key -%}
+  <th class="num"><span title="{{ code|fmt_issue_code }}">
+    <a href="code/{{ code }}">{{ code }}</a></span></th>
+  {%- endfor %}
+</tr>
+</thead>
+<tbody>
+{% for row in debissues_matrix -%}
+  <tr class="repo-row">
+    <td>{{ row.arch }}</td>
+    <td>{{ row.branch }}</td>
+    <td class="repo-pkgcount num"><a href="/cleanmirror/{{ row.arch }}/{{ row.branch }}">{{ row.oldcnt }}</a></td>
+    {% for col in row.issues -%}
+      <td class="repo-pkgcount num"{% if (srcissues_max!=0.0) & (col.cnt!=0) %} style="background-color:hsl(17,100%,{{ col.ratio|calc_color_ratio(debissues_max) }}%)" title="{{ "{:.1}%"|format(100.0*col.ratio) }}"{% endif %}>{% if col.cnt!=0 -%}
+      <a href="code/{{ col.errno }}/{{ row.arch }}/{{ row.branch }}">
+        {{ col.cnt }}</a>
+    {%- else %}{{ col.cnt }}{% endif %}</td>
+    {%- endfor %}
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+</div>
+{% endblock main %}

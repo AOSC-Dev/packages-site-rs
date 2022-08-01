@@ -1,0 +1,34 @@
+{%- import "pagination.inc.macros.html" as macro -%}
+
+{% extends "base.html" %}
+{% block title %}"{{ tree }}" source tree - AOSC OS Packages{% endblock %}
+{% block banner %}<h1>"{{ tree }}" source tree</h1>
+<p class="description"><span class="num">{{ page.count }} packages.</span></p>
+{% endblock %}
+{% block main %}
+<table class="packages">
+<thead>
+  <tr>
+    <th>Package</th>
+    <th>DPKG Version</th>
+    <th>Spec Version</th>
+    <th>Available in</th>
+  </tr>
+</thead>
+<tbody>
+{% for pkg in packages -%}
+  <tr>
+    <td class="pkg-name">
+      <a href="/packages/{{ pkg.name }}">{{ pkg.name }}</a>
+    </td>
+    <td class="pkg-version pkg-version-dpkg dpkg-ver-{{ pkg.ver_compare|fmt_ver_compare }}">
+      {{ pkg.dpkg_version }}</td>
+    <td class="pkg-version">{{ pkg.full_version }}</td>
+    <td class="pkg-repos">{{ pkg.dpkg_repos }}</td>
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+{% include "legend.inc.html" %}
+{% include "pagination.inc.html" %}
+{% endblock main %}

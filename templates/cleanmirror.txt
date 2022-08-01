@@ -1,0 +1,3 @@
+{% for deb in debs -%}
+{{ deb.filename }}	{{ deb.removereason }}
+{% endfor %}

@@ -1,0 +1,36 @@
+{#
+  1 2 3 4 5 6 ... 11 12
+  1 2 ... 5 6 7 ... 11 12
+  1 2 ... 6 7 8 ... 11 12
+  1 2 ... 7 8 9 10 11 12
+#}
+
+{% if page.max > 1 -%}
+<div class="pagination">
+  {% if page.cur > 1 -%}
+    <a class="page-btn" href="{% call macro::args(page.cur - 1) %}">&laquo;</a>
+  {%- endif %}
+  {% if page.max > 9 -%}
+    {% if page.cur < 6 -%}
+      {% call macro::page_buttons(1, 6, page.cur) %}
+      {% call macro::page_button_ellipsis() %}
+      {% call macro::page_buttons(page.max - 1, page.max, page.cur) %}
+    {%- else if page.cur > page.max - 4 -%}
+      {% call macro::page_buttons(1, 2, page.cur) %}
+      {% call macro::page_button_ellipsis() %}
+      {% call macro::page_buttons(page.max - 4, page.max, page.cur) %}
+    {%- else -%}
+      {% call macro::page_buttons(1, 2, page.cur) %}
+      {% call macro::page_button_ellipsis() %}
+      {% call macro::page_buttons(page.cur - 1, page.cur + 1, page.cur) %}
+      {% call macro::page_button_ellipsis() %}
+      {% call macro::page_buttons(page.max - 1, page.max, page.cur) %}
+    {%- endif %}
+  {%- else -%}
+    {% call macro::page_buttons(1, page.max, page.cur) %}
+  {%- endif %}{% if page.cur < page.max -%}
+    <a class="page-btn" href="{% call macro::args(page.cur + 1) %}">&raquo;</a>
+  {%- endif %}
+</div>
+{%- endif %}
+  

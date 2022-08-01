@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AOSC OS Packages{% endblock %}</title>
+  <link rel="icon" href="/static/aosc.png">
+  <meta name="theme-color" content="#2489c9">
+  <link rel="icon" sizes="any" type="image/svg+xml" href="/static/aosc.svg">
+  <link rel="apple-touch-icon-precomposed" href="/static/aosc.svg">
+  {% block extraheader %}{% endblock %}
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/autocomplete.js"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-default" id="nav">
+    <div class="container container-navbar">
+      <ul class="navbar-ul">
+        <li class="nav-path"><a href="https://aosc.io">AOSC</a></li>
+        <li class="nav-path"><a href="/">Packages</a></li>
+        {% block navpath %}{% endblock %}
+        <li class="afe-highlight">
+          <form id="searchbox" action="/search/" method="get">
+            <input name="q" id="searchinput" placeholder="Search package">
+          </form>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <a name="top"></a>
+  <header class="banner">
+    <div class="container">
+      {% block banner %}<h1>AOSC OS Packages</h1>{% endblock %}
+    </div>
+  </header>
+  <div class="container">
+    <main>
+      {% block main %}{% endblock %}
+    </main>
+    <footer class="page-footer">
+      <span>Copyleft 2011–2022, Members of the community. –
+        <a href="https://github.com/AOSC-Dev/packages-site#api">API</a>
+      </span>
+    </footer>
+  </div>
+  <script src="/pkgtrie.js"></script>
+</body>
+
+</html>

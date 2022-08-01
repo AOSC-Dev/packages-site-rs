@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} - AOSC OS Packages{% endblock %}
+{% block banner %}<h1>{{ name }}
+{% if !version.is_empty() %}<span class="pkg-version">{{ version }}</span>{% endif %}
+</h1>
+<p class="description pkg-description">{{ description|d("", true) }}</p>
+{% endblock %}
+
+{% block main %}
+<div class="package" id="{{ name }}">
+<section class="pkg-info">
+{% if !tree.is_empty() -%}
+<p><b class="pkg-field">Section</b>: {% if !category.is_empty() -%} {{"{}-"|format(category)}} {%- endif %}{{ section }}</p>
+{%- endif %}
+
+
+{% for dep in dependencies -%}
+  <p>
+    <b class="pkg-field pkg-dep-rel">{{ dep.relationship }}</b> {% if !dep.arch.is_empty() -%}{{dep.arch}}{%- endif %}:
+    {% for (name,relop) in dep.packages -%}
+    {% if loop.index != 1 -%},{%- endif %}
+    <span class="pkg-dep"><a href="{{ name }}">{{ name }}</a>{{ relop }}</span>
+    {%- endfor %}
+{%- endfor %}
+
+
+<p><b class="pkg-field">Links</b>:
+<a href="/changelog/{{ name|urlencode }}">Changelog</a>,
+{% if hasrevdep -%}
+<a href="/revdep/{{ name|urlencode }}">Reverse dependency</a>,
+{%- endif %}
+<a href="/qa/packages/{{ name|urlencode }}">QA Page</a>,
+<a href="https://github.com/AOSC-Dev/{{ tree }}/issues/new?template=bug-report.md&title={{ name|urlencode }}%3A%20">Report issues</a></p>
+{% if !srctype.is_empty() -%}
+<p><b class="pkg-field" title="auto detected">Upstream</b>:
+{% if !srcurl_base.is_empty() -%}
+<a href="{{ srcurl_base }}">source</a>
+<a href="{{ srcurl }}">({{ srctype }}) {{ version }}</a>
+{%- else -%}
+<a href="{{ srcurl }}">source ({{ srctype }})</a>
+{%- endif %}{% if hasupstream -%}, latest version
+<span class="pkg-upstream pkg-upstream-{{ upstream_ver_compare|fmt_ver_compare }}" title="{{ upstream_updated|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">
+<a href="{{ upstream_url }}">{{ upstream_version }}</a></span>
+{%- endif %}
+</p>
+{%- endif %}
+</section>
+<h2>Available versions</h2>
+{% if full_version.is_empty() -%}
+<p class="pkg-deprecated">(Deprecated)</p>
+{% endif -%}
+<div class="table-wrapper">
+<table class="packages">
+<thead>
+  <tr>
+    <th>Version</th>
+    {% for version in versions -%}
+    {% if !version.url.is_empty() -%}
+    <th class="dpkg-ver dpkg-{{ version.branch }}" title="{{ version.branch }}">
+      <a href="{{ version.url }}">{{ version.version }}</a></th>
+    {%- else -%}
+    <th class="dpkg-ver">{{ version.version }}</th>
+    {%- endif %}
+    {%- endfor %}
+  </tr>
+</thead>
+<tbody>
+{% for row in dpkg_matrix -%}
+  <tr>
+    <td>{{ row.repo }}</td>
+    {% for meta in row.meta -%}
+      {% if meta.hasmeta -%}
+      {% if meta.testing == 1 -%}
+      <td class="dpkg dpkg-testing" title="testing">
+      {%- else if meta.testing == 2 -%}
+      <td class="dpkg dpkg-explosive" title="explosive">
+      {%- else -%}<td class="dpkg">{%- endif %}
+        <a href="/files/{{ meta.repo }}/{{ name|urlencode }}/{{ meta.version }}">
+          {{ meta.size|sizeof_fmt }}
+        </a>
+      </td>{%- else -%}<td class="dpkg dpkg-missing"></td>
+      {%- endif %}
+    {%- endfor %}
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% endblock main %}

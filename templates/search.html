@@ -1,0 +1,71 @@
+{# macros for "pagination.inc.html" #}
+{% macro args(p) -%}?{{ "q={}&"|format(q)|d("",true) }}page={{ p }}{%- endmacro %}
+{% macro page_buttons(start, stop, current) -%}
+  {% for number in start..(stop+1) -%}
+    {% if current == number -%}
+      <span class="page-btn">{{ number }}</span>
+    {%- else -%}
+      <a class="page-btn" href="{% call args(number)  %}">{{ number }}</a>
+    {%- endif %}
+  {%- endfor %}
+{%- endmacro %}
+{% macro page_button_ellipsis() -%}
+  <span class="page-ellip">&hellip;</span>
+{%- endmacro %}
+
+{% extends "base.html" %}
+{% block title %}Search for "{{ q }}" - AOSC OS Packages{% endblock %}
+{% block banner %}<h1>Search for "{{ q }}"</h1>
+<p class="description">Found <span class="num">{{ page.count }} packages.</span></p>{% endblock %}
+{% block main %}
+{% if !packages.is_empty() -%}
+<table class="packages">
+<tbody>
+{% for pkg in packages -%}
+  <tr>
+    <td class="pkg-name">
+      <a href="/packages/{{ pkg.name }}">{{ pkg.name_highlight|safe }}</a>
+    </td>
+    <td class="pkg-version">{{ pkg.full_version }}</td>
+    <td class="pkg-description">{{ pkg.desc_highlight|safe }}</td>
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+
+
+{% if page.max > 1 -%}
+<div class="pagination">
+  {% if page.cur > 1 -%}
+    <a class="page-btn" href="{% call args(page.cur - 1) %}">&laquo;</a>
+  {%- endif %}
+  {% if page.max > 9 -%}
+    {% if page.cur < 6 -%}
+      {% call page_buttons(1, 6, page.cur) %}
+      {% call page_button_ellipsis() %}
+      {% call page_buttons(page.max - 1, page.max, page.cur) %}
+    {%- else if page.cur > page.max - 4 -%}
+      {% call page_buttons(1, 2, page.cur) %}
+      {% call page_button_ellipsis() %}
+      {% call page_buttons(page.max - 4, page.max, page.cur) %}
+    {%- else -%}
+      {% call page_buttons(1, 2, page.cur) %}
+      {% call page_button_ellipsis() %}
+      {% call page_buttons(page.cur - 1, page.cur + 1, page.cur) %}
+      {% call page_button_ellipsis() %}
+      {% call page_buttons(page.max - 1, page.max, page.cur) %}
+    {%- endif %}
+  {%- else -%}
+    {% call page_buttons(1, page.max, page.cur) %}
+  {%- endif %}{% if page.cur < page.max -%}
+    <a class="page-btn" href="{% call args(page.cur + 1) %}">&raquo;</a>
+  {%- endif %}
+</div>
+{%- endif %}
+
+
+{%- else -%}
+<div class="error">No packages matching "{{ q }}" found.</div>
+{%- endif %}
+<div class="tips">Didn't find what you need? You can <a href="https://github.com/AOSC-Dev/aosc-os-abbs/issues/new?title=pakreq%3A%20{{ q|urlencode }}&body=URL%3A%20%0A%0ADescription%3A%20">request for the package</a>.</div>
+{% endblock main %}

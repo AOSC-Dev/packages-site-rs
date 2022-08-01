@@ -1,0 +1,8 @@
+{% for ch in changes -%}
+{{ ch.package }} ({{ ch.version|d("?", true) }}) {{ ch.branch }}; urgency={{ch.urgency}}
+
+  [{{ ch.githash|cut(10) }}] {{ ch.message|get_first_line|fill(78,"  ") }}
+
+ -- {{ ch.maintainer_name|d("unknown", true) }} <{{ ch.maintainer_email }}>  {{ ch.timestamp|fmt_timestamp }}
+
+{% endfor %}

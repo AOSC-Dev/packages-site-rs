@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Files in "{{ pkg.package }}" - AOSC OS Packages{% endblock %}
+{% block banner %}<h1>Files in "{{ pkg.package }}" ({{ pkg.version }})</h1>
+<p><a href="/packages/{{ pkg.package }}">← Back to package details</a></p>
+{% endblock %}
+{% block main %}
+<p><b><a href="https://repo.aosc.io/debs/{{ pkg.filename }}">Download</a></b></p>
+<p><b class="pkg-field">Repository</b>: {{ pkg.repo }}</p>
+<p><b class="pkg-field">Package time</b>: <time datetime="{{ pkg_debtime|strftime_i32("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{
+        pkg_debtime|strftime_i32("[year]-[month]-[day] [hour]:[minute]") }}</time></p>
+<p><b class="pkg-field">Size</b>: {{ pkg.size }}</p>
+<p><b class="pkg-field">SHA256</b>: <code>{{ pkg.sha256 }}</code></p>
+<p><b class="pkg-field">Installed Size</b>: {{ (pkg.installed_size*1024)|sizeof_fmt }}</p>
+<p><b class="pkg-field">Maintainer</b>: {{ pkg.maintainer|escape }}</p>
+{% if !sodepends.is_empty() -%}
+<p><b class="pkg-field">Library depends</b>: {{ sodepends|join(", ") }}</p>
+{% endif %}
+{% if !soprovides.is_empty() -%}
+<p><b class="pkg-field">Library provides</b>: {{ soprovides|join(", ") }}</p>
+{% endif %}
+<p><b class="pkg-field">Files</b>: </p>
+<ul class="pkg-files">
+    {% for file in files %}
+    <li><span class="pkg-ls-perm">{{ file.perm|ls_perm(file.ftype) }}</span> <span class="pkg-ls-user">{{ file.uname
+            }}({{ file.uid }})</span> <span class="pkg-ls-user">{{ file.gname }}({{ file.gid }})</span> <span
+            class="pkg-ls-size num">{{ file.size|sizeof_fmt_ls }}</span> {% if file.filename.as_ref().is_some() -%} {{file.filename.as_ref().unwrap()}} {%- endif %}</li>
+    {%- endfor %}
+</ul>
+{% endblock main %}

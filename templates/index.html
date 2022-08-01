@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block extraheader -%}
+<link rel="canonical" href="https://packages.aosc.io/">
+{%- endblock %}
+{% block banner %}<h1><span><img class="logo" src="/static/aosc.png" width="42px" height="42px">/Packages</span></h1>
+<p class="description">AOSC OS has a total of <span class="num">{{ total }}</span> packages{# across <span class="num">{{ archs }}</span> architectures #}.</p>
+{% endblock %}
+{% block main %}
+<h2>Latest Source Updates</h2>
+<p>These updates will be available in the dpkg source soon.</p>
+<table class="packages">
+<tbody>
+{% for pkg in updates -%}
+  <tr>
+    <td class="pkg-name">
+      <a href="/packages/{{ pkg.name }}">{{ pkg.name }}</a>
+    </td>
+    <td class="pkg-version">{{ pkg.full_version }}</td>
+    <td class="pkg-description">{{ pkg.description }}</td>
+  </tr>
+{%- endfor %}
+  <tr>
+    <td class="pkg-more" colspan="3">
+      <a href="/updates">See more updates</a>
+    </td>
+  </tr>
+</tbody>
+</table>
+<h2>Repositories and Trees</h2>
+<p>See also: <a href="/qa/">Package Quality Assurance</a></p>
+<table class="packages">
+<tbody>
+  <tr>
+    <th><span title="Dpkg source">Repository</span></th>
+    <th>
+      <span class="tab"><span title="Package count">Count</span></span>
+      <span class="tab"><span title="Packages not found in source tree">Ghost</span></span>
+      <span class="tab"><span title="Updates of source tree not available in repo">Lagging</span></span>
+      <span class="tab"><span title="Packages in source tree not available in repo">Missing</span></span>
+    </th>
+    <th>Last Update (UTC)</th>
+  </tr>
+
+  {% for (category, repos) in repo_categories -%}
+  {% if !category.is_empty() & !repos.is_empty() -%}
+    <tr class="repo-row">
+      <th class="repo-category" colspan="3">{{ category }}</th>
+    </tr>
+  {%- endif %}
+  {% for repo in repos -%}
+    <tr class="repo-row{% if repo.testing != 0 -%} {{ " repo-testing" }} {%- else -%} {{""}} {%- endif %}">
+      {% if repo.testingonly != 0 -%}
+      <td class="repo-name repo-name">{{ repo.name }}</td>
+      {%- else if repo.testing != 0 -%}
+      <td class="repo-name repo-name-testing">{{ repo.branch }}</td>
+      {%- else -%}
+      <td class="repo-name">{{ repo.realname }}</td>
+      {%- endif %}
+      <td>
+        <span class="repo-pkgcount tab num">
+          <a href="/repo/{{ repo.name }}" class="num">{{ repo.pkgcount }}</a>
+        </span>
+        <span class="repo-ghost tab num">
+          <a href="/ghost/{{ repo.name }}" class="num">{{ repo.ghost }}</a>
+        </span>
+        <span class="repo-lagging tab num">
+          <a href="/lagging/{{ repo.name }}" class="num">{{ repo.lagging }}</a>
+        </span>
+        {% if (repo.testing == 0) & (repo.category != "overlay") -%}
+        <span class="repo-missing tab num">
+          <a href="/missing/{{ repo.name }}" class="num">{{ repo.missing }}</a>
+        </span>
+        {% endif %}
+      </td>
+      <td class="repo-date">
+        <time datetime="{{ repo.date|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{ repo.date|strftime("[year]-[month]-[day] [hour]:[minute]") }}</time>
+      </td>
+    </tr>
+  {%- endfor %}
+  {%- endfor %}
+
+  <tr>
+    <th><span title="Links to Git repo">Source Tree</span></th>
+    <th>
+      <span class="tab"><span title="Package count">Count</span></span>
+      <span class="tab"><span title="Packages with updated upstream">Outdated</span></span>
+    </th>
+    <th>Last Update (UTC)</th>
+  </tr>
+{% for (_,tree) in source_trees -%}
+  <tr>
+    <td class="repo-name"><a href="{{ tree.url }}">{{ tree.name }}</a></td>
+    <td class="repo-pkgcount">
+      <span class="repo-pkgcount tab num">
+        <a href="/tree/{{ tree.name }}" class="num">{{ tree.pkgcount }}</a>
+      </span>
+      <span class="repo-lagging tab num">
+        <a href="/srcupd/{{ tree.name }}" class="num">{{ tree.srcupd }}</a>
+      </span>
+    </td>
+    <td class="repo-date">
+      <time datetime="{{ tree.date|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{ tree.date|strftime("[year]-[month]-[day] [hour]:[minute]") }}</time>
+    </td>
+  </tr>
+{%- endfor %}
+</tbody>
+</table>
+{% endblock main %}

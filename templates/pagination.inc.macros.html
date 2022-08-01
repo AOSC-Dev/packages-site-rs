@@ -1,0 +1,14 @@
+{# macros for "pagination.inc.html" #}
+{% macro args(p) -%}?page={{ p }}{%- endmacro %}
+{% macro page_buttons(start, stop, current) -%}
+  {% for number in start..(stop+1) -%}
+    {% if current == number -%}
+      <span class="page-btn">{{ number }}</span>
+    {%- else -%}
+      <a class="page-btn" href="{% call args(number)  %}">{{ number }}</a>
+    {%- endif %}
+  {%- endfor %}
+{%- endmacro %}
+{% macro page_button_ellipsis() -%}
+  <span class="page-ellip">&hellip;</span>
+{%- endmacro %}

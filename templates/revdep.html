@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Reverse dependencies of "{{ name }}" - AOSC OS Packages{% endblock %}
+{% block banner %}<h1>Reverse dependencies of "{{ name }}"</h1>
+<p><a href="/packages/{{ name }}">← Back to package details</a>,
+    <a href="/qa/packages/{{ name }}">QA page</a>
+</p>
+{% endblock %}
+{% block main %}
+
+{% for revdep in revdeps -%}
+<p>
+    <b class="pkg-field pkg-dep-rel">{{ revdep.description }}</b>:
+    {% for dep in revdep.deps -%}
+    {% if loop.index != 1 %},{% endif %}
+    <span class="pkg-dep"><a href="{{ dep.package }}">{{ dep.package }}</a>{{ dep.version }}{% if
+        !dep.architecture.is_empty() %}
+        [{{ dep.architecture }}]{% endif %}</span>
+    {%- endfor %}
+</p>
+{%- endfor %}
+
+{% if !sobreaks.is_empty() -%}<p><b class="pkg-field">Library depended by</b>:
+<ul>{% for level in sobreaks -%}
+    <li>{% for package in level -%}
+        {% if loop.index != 1 %},{% endif %}
+        <span class="pkg-dep"><a href="{{ package }}">{{ package }}</a></span>
+        {%- endfor %}
+    </li>{% endfor %}
+    {% if !sobreaks_circular.is_empty() %}
+    <li>(Circular dependencies) {% for package in sobreaks_circular -%}
+        {% if loop.index != 1 %},{% endif %}
+        <span class="pkg-dep"><a href="{{ package }}">{{ package }}</a></span>
+        {%- endfor %}
+    </li>
+    {% endif %}
+</ul>
+{% endif %}
+
+{% endblock main %}
