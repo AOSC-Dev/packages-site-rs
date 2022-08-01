@@ -54,8 +54,12 @@ pub async fn static_files(
 }
 
 typed_path!("/changelog/:name", Changelog, name);
-pub async fn changelog(Changelog { name }: Changelog, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(Debug, FromRow)]
+pub async fn changelog(
+    Changelog { name }: Changelog,
+    q: Query,
+    db: Ext,
+) -> Result<impl IntoResponse> {
+    #[derive(Debug, FromRow, Serialize)]
     struct Change {
         pub package: String,
         pub githash: String,
@@ -78,7 +82,7 @@ pub async fn changelog(Changelog { name }: Changelog, db: Ext) -> Result<impl In
         return not_found!("Package \"{name}\" not found.");
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "changelog.txt")]
     struct Template {
         changes: Vec<Change>,
@@ -86,7 +90,7 @@ pub async fn changelog(Changelog { name }: Changelog, db: Ext) -> Result<impl In
 
     let ctx = Template { changes };
 
-    Ok(ctx)
+    render::<_, Template>(ctx, None, q)
 }
 
 typed_path!("/pkgtrie.js", PkgTrie);
@@ -329,8 +333,7 @@ pub async fn tree(RouteTree { tree }: RouteTree, q: Query, db: Ext) -> Result<im
     let packages = &packages
         .into_iter()
         .map(|package| {
-            let mut repos: Vec<_> = package.dpkg_availrepos.split(',').collect();
-            repos.sort();
+            let repos = package.dpkg_availrepos.split(',').sorted().collect_vec();
             let dpkg_repos = repos.join(", ");
 
             TemplatePackage {
@@ -520,7 +523,7 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, q: Query, db: Ext) -> Result<impl I
         upstream_version: String,
         updated: i64,
         upstream_url: String,
-        //upstream_tarball: String,
+        upstream_tarball: String,
     }
 
     #[derive(Template, Serialize)]
@@ -608,16 +611,16 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
 }
 
 typed_path!("/", Index);
-pub async fn index(_: Index, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow)]
+pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
+    #[derive(FromRow, Serialize)]
     struct Package {
         name: String,
         description: String,
         full_version: String,
-        // commit_time: i64,
+        commit_time: i64,
     }
 
-    #[derive(Template)]
+    #[derive(Template, Serialize)]
     #[template(path = "index.html")]
     struct Template {
         total: i64,
@@ -629,10 +632,10 @@ pub async fn index(_: Index, db: Ext) -> Result<impl IntoResponse> {
     let source_trees = db_trees(&db).await?;
     let repos = db_repos(&db).await?;
 
-    let repo_categories: Vec<_> = REPO_CAT
+    let repo_categories = REPO_CAT
         .iter()
         .map(|(category_capital, category)| {
-            let repos: Vec<_> = repos
+            let repos = repos
                 .iter()
                 .filter_map(|(_name, repo)| {
                     if &repo.category == category_capital {
@@ -645,7 +648,7 @@ pub async fn index(_: Index, db: Ext) -> Result<impl IntoResponse> {
 
             (category.to_string(), repos)
         })
-        .collect();
+        .collect_vec();
 
     let total: i64 = source_trees.iter().map(|(_name, repo)| repo.pkgcount).sum();
     let updates = query_as(SQL_GET_PACKAGE_NEW).fetch_all(&db.abbs).await?;
@@ -657,7 +660,7 @@ pub async fn index(_: Index, db: Ext) -> Result<impl IntoResponse> {
         updates,
     };
 
-    Ok(ctx)
+    render::<_, Template>(ctx, None, q)
 }
 
 typed_path!("/repo/*repo", RouteRepo, repo);
@@ -734,22 +737,26 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
 }
 
 typed_path!("/packages/:name", RoutePackage, name);
-pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<impl IntoResponse> {
-    #[derive(FromRow, Debug)]
+pub async fn packages(
+    RoutePackage { name }: RoutePackage,
+    q: Query,
+    db: Ext,
+) -> Result<impl IntoResponse> {
+    #[derive(FromRow, Debug, Serialize)]
     struct Package {
-        // name: String,
+        name: String,
         tree: String,
         tree_category: String,
-        // branch: String,
+        branch: String,
         category: String,
         section: String,
-        // pkg_section: String,
+        pkg_section: String,
         directory: String,
         description: String,
         version: String,
         full_version: String,
-        // commit_time: i64,
-        // committer: String,
+        commit_time: i64,
+        committer: String,
         dependency: String,
         noarch: bool,
         fail_arch: String,
@@ -758,13 +765,13 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
         hasrevdep: bool,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize)]
     struct MatrixRow {
         repo: String,
         meta: Vec<DpkgMeta>,
     }
 
-    #[derive(Default, Clone, Debug)]
+    #[derive(Default, Clone, Debug, Serialize)]
     struct DpkgMeta {
         hasmeta: bool,
         version: String,
@@ -776,15 +783,15 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
     #[derive(FromRow, Debug)]
     struct DpkgPackage {
         version: String,
-        // architecture: String,
+        //architecture: String,
         repo: String,
         reponame: String,
         testing: i64,
-        // filename: String,
+        //filename: String,
         size: i64,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize)]
     struct Version {
         version: String,
         url: String,
@@ -804,15 +811,16 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
         url: String,
     }
 
-    #[derive(Template, Debug)]
+    #[derive(Template, Debug, Serialize)]
     #[template(path = "package.html")]
-    struct Template {
-        name: String,
-        version: String,
-        description: String,
-        tree: String,
-        category: String,
-        section: String,
+    struct Template<'a> {
+        pkg: &'a Package,
+        name: &'a String,
+        version: &'a String,
+        description: &'a String,
+        tree: &'a String,
+        category: &'a String,
+        section: &'a String,
         dependencies: Vec<Dependency>,
         hasrevdep: bool,
         srctype: String,
@@ -823,7 +831,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
         upstream_url: String,
         upstream_updated: i64,
         upstream_version: String,
-        full_version: String,
+        full_version: &'a String,
         versions: Vec<Version>,
         dpkg_matrix: Vec<MatrixRow>,
     }
@@ -860,8 +868,10 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
     if pkgintree & !fullver.is_empty() & !vers.contains(fullver) {
         vers.insert(fullver.clone());
     }
-    let mut vers: Vec<_> = vers.into_iter().collect();
-    vers.sort_by(|a, b| deb_version::compare_versions(a, b).reverse());
+    let vers = vers
+        .into_iter()
+        .sorted_by(|a, b| deb_version::compare_versions(a, b).reverse())
+        .collect_vec();
 
     // 2. generate src_vers from SQL query
     let src_vers: Vec<PackageVersion> = query_as(SQL_GET_PACKAGE_VERSIONS)
@@ -874,7 +884,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
         .collect();
 
     // 3. generate versions list
-    let versions:Vec<_> = vers.iter().map(|version| {
+    let versions= vers.iter().map(|version| {
         let branch = src_vers.get(version).cloned().unwrap_or_default();
         let url = if !branch.is_empty() {
             let (tree, section, directory) = (&pkg.tree, &pkg.section, &pkg.directory);
@@ -891,7 +901,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
         };
 
         Version { version: version.clone(), url, branch }
-    }).collect();
+    }).collect_vec();
 
     // 4. generate reponames list, sorted by asc
     let reponames = if pkg.noarch {
@@ -917,16 +927,16 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
     } else {
         dpkgs.iter().map(|p| p.reponame.clone()).collect()
     };
-    let mut reponames = reponames
+    let reponames = reponames
         .into_iter()
         .collect::<HashSet<_>>()
         .into_iter()
-        .collect::<Vec<_>>();
-    reponames.sort();
+        .sorted()
+        .collect_vec();
 
     // 5. generate dpkg_matrix
     let dpkg_repos: HashSet<_> = dpkgs.iter().map(|d| &d.reponame).collect();
-    let dpkg_matrix: Vec<MatrixRow> = reponames
+    let dpkg_matrix = reponames
         .iter()
         .map(|repo| {
             if !dpkg_repos.contains(repo) {
@@ -938,7 +948,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
                 return row;
             }
 
-            let meta: Vec<_> = versions
+            let meta = versions
                 .iter()
                 .map(|ver| {
                     let dpkg = dpkgs
@@ -958,14 +968,14 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
                         DpkgMeta::default()
                     }
                 })
-                .collect();
+                .collect_vec();
 
             MatrixRow {
                 repo: repo.clone(),
                 meta,
             }
         })
-        .collect();
+        .collect_vec();
 
     // deal with upstream related variables
     let mut upstream_url = String::new();
@@ -1041,14 +1051,15 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
 
     let ctx = Template {
         // package
-        name,
-        version: pkg.version,
-        description: pkg.description,
-        tree: pkg.tree,
-        category: pkg.category,
-        section: pkg.section,
+        pkg: &pkg,
+        name: &name,
+        version: &pkg.version,
+        description: &pkg.description,
+        tree: &pkg.tree,
+        category: &pkg.category,
+        section: &pkg.section,
         hasrevdep: pkg.hasrevdep,
-        full_version: pkg.full_version,
+        full_version: &pkg.full_version,
 
         // dependencies
         dependencies: Dependency::parse_db_dependencies(&pkg.dependency),
@@ -1068,7 +1079,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, db: Ext) -> Result<im
         hasupstream,
     };
 
-    Ok(ctx)
+    render::<_, Template>(ctx, None, q)
 }
 
 typed_path!(
@@ -1298,11 +1309,11 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let mut total = 0;
     let mut percent = 0.0;
 
-    let mut src_issues: HashMap<(String, String), HashMap<i32, (i64, f64)>> = HashMap::new(); //Hashmap<(arch,branch,HashMap<errno,(cnt,ratio)>)>
+    let mut src_issues = HashMap::new(); //Hashmap<(arch,branch,HashMap<errno,(cnt,ratio)>)>
     let mut srcissues_key = HashSet::new();
     let mut srcissues_max = 0.0;
 
-    let mut deb_issues: HashMap<(&String, &String), HashMap<i32, (i64, f64)>> = HashMap::new(); //Hashmap<(arch,branch,HashMap<errno,(cnt,ratio)>)>
+    let mut deb_issues = HashMap::new(); //Hashmap<(arch,branch,HashMap<errno,(cnt,ratio)>)>
     let mut debissues_key = HashSet::new();
     let mut debissues_max = 0.0;
 
@@ -1377,7 +1388,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
         .values()
         .filter_map(|r| {
             if let Some(errs) = deb_issues.get(&(&r.architecture, &r.branch)) {
-                let issues: Vec<_> = debissues_key
+                let issues = debissues_key
                     .iter()
                     .map(|err| {
                         if let Some((cnt, ratio)) = errs.get(err) {
@@ -1390,7 +1401,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
                             Issue::default()
                         }
                     })
-                    .collect();
+                    .collect_vec();
 
                 let oldcnt = olddebs
                     .iter()
@@ -1411,7 +1422,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
         .collect_vec();
 
     // recent packages
-    let recent: Vec<Package> = query_as(SQL_ISSUES_RECENT)
+    let recent = query_as(SQL_ISSUES_RECENT)
         .fetch_all(&db.pg)
         .await?
         .into_iter()
@@ -1426,7 +1437,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
                 None
             }
         })
-        .collect();
+        .collect_vec();
 
     let ctx = Template {
         total,
@@ -1556,7 +1567,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
 }
 
 typed_path!("/qa/packages/:name", QaPkg, name);
-pub async fn qa_package(QaPkg { name }: QaPkg, db: Ext) -> Result<impl IntoResponse> {
+pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow, Debug)]
     struct Package {
         tree: String,
@@ -1579,20 +1590,20 @@ pub async fn qa_package(QaPkg { name }: QaPkg, db: Ext) -> Result<impl IntoRespo
         detail: Option<serde_json::Value>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize)]
     struct Issue {
         errno: i32,
 
         examples: Vec<Example>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize)]
     struct Info {
         file: File,
         detail: serde_json::Value,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize)]
     struct Example {
         filecount: usize,
         info: Vec<Info>,
@@ -1603,12 +1614,12 @@ pub async fn qa_package(QaPkg { name }: QaPkg, db: Ext) -> Result<impl IntoRespo
         custom: serde_json::Value,
     }
 
-    #[derive(Debug, Hash)]
+    #[derive(Debug, Serialize)]
     struct File {
         filename: String,
     }
 
-    #[derive(Debug, Template)]
+    #[derive(Debug, Template, Serialize)]
     #[template(path = "qa_package.html")]
     struct Template {
         name: String,
@@ -1782,7 +1793,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, db: Ext) -> Result<impl IntoRespo
         issues,
     };
 
-    Ok(ctx)
+    render::<_, Template>(ctx, None, q)
 }
 
 typed_path!("/cleanmirror/*repo", CleanMirror, repo);
@@ -1796,13 +1807,13 @@ pub async fn cleanmirror(
         .map(|r| r.split(',').map(|x| x.to_string()).collect());
     let repo = strip_prefix(&repo)?;
 
-    #[derive(Debug, FromRow)]
+    #[derive(Debug, FromRow, Serialize)]
     struct Deb {
         filename: String,
         removereason: String,
     }
 
-    #[derive(Debug, Template)]
+    #[derive(Debug, Template, Serialize)]
     #[template(path = "cleanmirror.txt")]
     struct Template<'a> {
         debs: Vec<&'a Deb>,
@@ -1845,7 +1856,7 @@ pub async fn cleanmirror(
 
     let ctx = Template { debs };
 
-    Ok(ctx.into_response())
+    render::<_, Template>(ctx, None, q)
 }
 
 typed_path!("/revdep/:name", Revdep, name);
