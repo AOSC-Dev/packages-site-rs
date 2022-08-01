@@ -1448,17 +1448,29 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
         .bind(&repo)
         .fetch_all(&db.pg)
         .await?;
-    let ceil = |a, b| (a + b - 1) / b;
-    let page = Page {
-        cur: q.get_page(),
-        max: ceil(pkgs.len() as u32, PAGESIZE),
-        count: pkgs.len() as u32,
+
+    let (page, pkgs) = if let Some(cur) = q.get_page() {
+        let ceil = |a, b| (a + b - 1) / b;
+        let page = Page {
+            cur,
+            max: ceil(pkgs.len() as u32, PAGESIZE),
+            count: pkgs.len() as u32,
+        };
+        let pkgs = pkgs
+            .chunks_mut(PAGESIZE as usize)
+            .nth(cur as usize - 1)
+            .with_context(|| "page param out of range")?;
+        pkgs.iter_mut().for_each(|pkg| pkg.versions.sort());
+
+        (page, pkgs)
+    } else {
+        let page = Page {
+            cur: 1,
+            max: 0,
+            count: pkgs.len() as u32,
+        };
+        (page, &mut pkgs[..])
     };
-    let pkgs = pkgs
-        .chunks_mut(PAGESIZE as usize)
-        .nth(q.get_page() as usize - 1)
-        .with_context(|| "page param out of range")?;
-    pkgs.iter_mut().for_each(|pkg| pkg.versions.sort());
 
     let ctx = Template {
         code,

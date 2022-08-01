@@ -334,7 +334,7 @@ pub fn issue_code(code: i32) -> Option<&'static str> {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct QueryInner {
-    page: Option<u32>,
+    page: Option<String>,
     q: Option<String>,
     noredir: Option<bool>,
     section: Option<String>,
@@ -344,7 +344,7 @@ pub struct QueryInner {
 pub type Query = Option<axum::extract::Query<QueryInner>>;
 
 pub trait QueryTrait {
-    fn get_page(&self) -> u32;
+    fn get_page(&self) -> Option<u32>;
     fn get_query(&self) -> Option<String>;
     fn get_noredir(&self) -> bool;
     fn get_section(&self) -> Option<String>;
@@ -352,11 +352,18 @@ pub trait QueryTrait {
 }
 
 impl QueryTrait for Query {
-    fn get_page(&self) -> u32 {
+    fn get_page(&self) -> Option<u32> {
         if let Some(inner) = self {
-            inner.page.unwrap_or(1)
+            if let Some(ref page) = inner.page {
+                match page.as_str() {
+                    "all" => None,
+                    s => Some(s.parse::<u32>().unwrap_or(1)),
+                }
+            } else {
+                Some(1)
+            }
         } else {
-            1
+            Some(1)
         }
     }
 
@@ -408,14 +415,15 @@ pub async fn get_repo(repo: &str, db: &Ext) -> Result<Repo> {
 }
 
 pub async fn db_last_modified(db: Ext) -> Result<i64> {
-    #[derive(Debug,FromRow)]
+    #[derive(Debug, FromRow)]
     struct CommitTime {
-      commit_time: i64,
+        commit_time: i64,
     }
 
-    let res:Option<CommitTime> = query_as("SELECT commit_time FROM package_versions ORDER BY commit_time DESC LIMIT 1")
-        .fetch_optional(&db.abbs)
-        .await?;
+    let res: Option<CommitTime> =
+        query_as("SELECT commit_time FROM package_versions ORDER BY commit_time DESC LIMIT 1")
+            .fetch_optional(&db.abbs)
+            .await?;
 
     Ok(res.map(|t| t.commit_time).unwrap_or_default())
 }
