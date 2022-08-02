@@ -1,6 +1,9 @@
 use crate::db::Db;
 use anyhow::Context;
 use askama::Template;
+use axum::async_trait;
+use axum::extract::FromRequest;
+use axum::extract::RequestParts;
 use axum::http::header;
 use axum::http::HeaderValue;
 use axum::http::StatusCode;
@@ -62,6 +65,8 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Query(#[from] axum::extract::rejection::QueryRejection),
 }
 
 impl IntoResponse for Error {
@@ -97,7 +102,7 @@ pub(crate) use typed_path;
 pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse>(
     ctx: T,
     ctx_tsv: Option<V>,
-    q: Query,
+    q: &Query,
 ) -> Result<Response> {
     Ok(match q.get_type() {
         Some("tsv") => {
@@ -360,8 +365,10 @@ pub fn issue_code(code: i32) -> Option<&'static str> {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct QueryInner {
+pub type Query = QueryExtractor;
+
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct QueryExtractor {
     page: Option<String>,
     q: Option<String>,
     noredir: Option<bool>,
@@ -370,72 +377,65 @@ pub struct QueryInner {
     r#type: Option<String>,
 }
 
-pub type Query = Option<axum::extract::Query<QueryInner>>;
+#[async_trait]
+impl<B> FromRequest<B> for QueryExtractor
+where
+    B: Send,
+{
+    type Rejection = Error;
 
-pub trait QueryTrait {
-    fn get_page(&self) -> Option<u32>;
-    fn get_query(&self) -> Option<String>;
-    fn get_noredir(&self) -> bool;
-    fn get_section(&self) -> Option<String>;
-    fn get_reason(&self) -> Option<String>;
-    fn get_type(&self) -> Option<&str>;
+    async fn from_request(req: &mut RequestParts<B>) -> std::result::Result<Self, Self::Rejection> {
+        use axum::extract::Query;
+        let mut res = Query::<QueryExtractor>::from_request(req).await?.0;
+
+        if req
+            .headers()
+            .get("X-Requested-With")
+            .and_then(|h| h.eq("XMLHttpRequest").then_some(()))
+            .is_some()
+        {
+            res.r#type = Some("json".into());
+        }
+
+        Ok(res)
+    }
 }
 
-impl QueryTrait for Query {
+impl QueryExtractor {
     #[inline(always)]
-    fn get_type(&self) -> Option<&str> {
-        if let Some(inner) = self {
-            inner.r#type.as_deref()
+    pub fn get_type(&self) -> Option<&str> {
+        if let Some(ref t) = self.r#type {
+            Some(t.as_str())
         } else {
             None
         }
     }
     #[inline(always)]
-    fn get_page(&self) -> Option<u32> {
-        if let Some(inner) = self {
-            if let Some(ref page) = inner.page {
-                match page.as_str() {
-                    "all" => None,
-                    s => Some(s.parse::<u32>().unwrap_or(1)),
-                }
-            } else {
-                Some(1)
+    pub fn get_page(&self) -> Option<u32> {
+        if let Some(ref page) = self.page {
+            match page.as_str() {
+                "all" => None,
+                s => Some(s.parse::<u32>().unwrap_or(1)),
             }
         } else {
             Some(1)
         }
     }
 
-    fn get_query(&self) -> Option<String> {
-        if let Some(inner) = self {
-            inner.q.clone()
-        } else {
-            None
-        }
+    pub fn get_query(&self) -> &Option<String> {
+        &self.q
     }
 
-    fn get_noredir(&self) -> bool {
-        if let Some(inner) = self {
-            inner.noredir.unwrap_or(false)
-        } else {
-            false
-        }
+    pub fn get_noredir(&self) -> bool {
+        self.noredir.unwrap_or(false)
     }
 
-    fn get_section(&self) -> Option<String> {
-        if let Some(inner) = self {
-            inner.section.clone()
-        } else {
-            None
-        }
+    pub fn get_section(&self) -> &Option<String> {
+        &self.section
     }
 
-    fn get_reason(&self) -> Option<String> {
-        if let Some(inner) = self {
-            inner.reason.clone()
-        } else {
-            None
-        }
+    pub fn get_reason(&self) -> &Option<String> {
+        &self.reason
     }
 }
 

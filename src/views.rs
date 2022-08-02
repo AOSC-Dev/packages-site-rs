@@ -90,7 +90,7 @@ pub async fn changelog(
 
     let ctx = Template { changes };
 
-    render::<_, Template>(ctx, None, q)
+    render::<_, Template>(ctx, None, &q)
 }
 
 typed_path!("/pkgtrie.js", PkgTrie);
@@ -228,7 +228,7 @@ pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<imp
 
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/missing/*repo", Missing, repo);
@@ -282,7 +282,7 @@ pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<imp
 
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/tree/:tree", RouteTree, tree);
@@ -355,7 +355,7 @@ pub async fn tree(RouteTree { tree }: RouteTree, q: Query, db: Ext) -> Result<im
 
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/ghost/*repo", Ghost, repo);
@@ -403,7 +403,7 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
     };
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/search", Search);
@@ -428,7 +428,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     #[derive(Template, Serialize)]
     #[template(path = "search.html")]
     struct Template<'a> {
-        q: String,
+        q: &'a String,
         packages: &'a Vec<PackageTemplate>,
         page: Page,
     }
@@ -439,29 +439,29 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
         packages: &'a Vec<PackageTemplate>,
     }
 
-    let q = query.get_query();
-    if q.is_none() {
+    let q = if let Some(q) = query.get_query() {
+        q
+    } else {
         let ctx = Template {
-            q: "".to_string(),
+            q: &"".to_string(),
             packages: &vec![],
             page: Page::default(),
         };
         let ctx_tsv = TemplateTsv { packages: &vec![] };
 
-        return render(ctx, Some(ctx_tsv), query);
-    }
-    let q = q.unwrap();
+        return render(ctx, Some(ctx_tsv), &query);
+    };
 
     if !query.get_noredir() {
         let q = q.trim().to_lowercase().replace(' ', "-").replace('_', "-");
         let mut row = sqlx::query("SELECT 1 FROM packages WHERE name = ?")
-            .bind(&q)
+            .bind(&&q)
             .fetch_optional(&db.abbs)
             .await?;
 
         if row.is_none() {
             row = sqlx::query(SQL_GET_PACKAGE_INFO_GHOST)
-                .bind(&q)
+                .bind(&&q)
                 .fetch_optional(&db.abbs)
                 .await?;
         }
@@ -496,7 +496,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
                 .replace("%^&amp;", "");
 
             let name_highlight =
-                html_escape::encode_safe(&pkg.name).replace(&q, &format!("<b>{q}</b>"));
+                html_escape::encode_safe(&pkg.name).replace(q, &format!("<b>{q}</b>"));
 
             PackageTemplate {
                 name_highlight,
@@ -511,7 +511,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     let ctx = Template { q, packages, page };
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), query)
+    render(ctx, Some(ctx_tsv), &query)
 }
 
 typed_path!("/srcupd/:tree", Srcupd, tree);
@@ -542,7 +542,7 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, q: Query, db: Ext) -> Result<impl I
     }
 
     get_tree(&tree, &db).await?;
-    let section = q.get_section();
+    let section = q.get_section().clone().unwrap_or_else(|| "".to_string());
 
     let (page, ref packages) = get_page!(
         SQL_GET_PACKAGE_SRCUPD,
@@ -563,12 +563,12 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, q: Query, db: Ext) -> Result<impl I
         page,
         packages,
         tree,
-        section: section.unwrap_or_default(),
+        section,
     };
 
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/updates", Updates);
@@ -607,7 +607,7 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
     let ctx = Template { packages };
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/", Index);
@@ -660,7 +660,7 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
         updates,
     };
 
-    render::<_, Template>(ctx, None, q)
+    render::<_, Template>(ctx, None, &q)
 }
 
 typed_path!("/repo/*repo", RouteRepo, repo);
@@ -733,7 +733,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
 
     let ctx_tsv = TemplateTsv { packages };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/packages/:name", RoutePackage, name);
@@ -1079,7 +1079,7 @@ pub async fn packages(
         hasupstream,
     };
 
-    render::<_, Template>(ctx, None, q)
+    render::<_, Template>(ctx, None, &q)
 }
 
 typed_path!(
@@ -1207,7 +1207,7 @@ pub async fn files(
 
     let ctx_tsv = TemplateTsv { files };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/qa", RouteQa);
@@ -1456,7 +1456,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
         debissues_matrix,
     };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/qa/code/:code", QaCode, code);
@@ -1563,7 +1563,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
 
     let ctx_tsv = TemplateTsv { packages: pkgs };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
 
 typed_path!("/qa/packages/:name", QaPkg, name);
@@ -1793,7 +1793,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
         issues,
     };
 
-    render::<_, Template>(ctx, None, q)
+    render::<_, Template>(ctx, None, &q)
 }
 
 typed_path!("/cleanmirror/*repo", CleanMirror, repo);
@@ -1804,6 +1804,7 @@ pub async fn cleanmirror(
 ) -> Result<impl IntoResponse> {
     let reason: Option<HashSet<_>> = q
         .get_reason()
+        .as_ref()
         .map(|r| r.split(',').map(|x| x.to_string()).collect());
     let repo = strip_prefix(&repo)?;
 
@@ -1856,7 +1857,7 @@ pub async fn cleanmirror(
 
     let ctx = Template { debs };
 
-    render::<_, Template>(ctx, None, q)
+    render::<_, Template>(ctx, None, &q)
 }
 
 typed_path!("/revdep/:name", Revdep, name);
@@ -2000,5 +2001,5 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         sobreaks_circular,
     };
 
-    render(ctx, Some(ctx_tsv), q)
+    render(ctx, Some(ctx_tsv), &q)
 }
