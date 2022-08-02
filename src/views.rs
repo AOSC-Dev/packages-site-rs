@@ -542,7 +542,7 @@ pub async fn srcupd(Srcupd { tree }: Srcupd, q: Query, db: Ext) -> Result<impl I
     }
 
     get_tree(&tree, &db).await?;
-    let section = q.get_section().clone().unwrap_or_else(|| "".to_string());
+    let section = q.get_section().clone().unwrap_or_default();
 
     let (page, ref packages) = get_page!(
         SQL_GET_PACKAGE_SRCUPD,
@@ -850,11 +850,11 @@ pub async fn packages(
         pkgintree = false;
     }
 
-    if pkg.is_none() {
+    let pkg = if let Some(pkg) = pkg {
+        pkg
+    } else {
         return not_found!("Package \"{}\" not found", name);
-    }
-
-    let pkg = pkg.unwrap();
+    };
 
     // Generate version matrix
     let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG)
@@ -1012,11 +1012,11 @@ pub async fn packages(
     let srctype = res
         .as_ref()
         .map(|x| x.srctype.to_string())
-        .unwrap_or_else(|| "".into());
+        .unwrap_or_default();
     let srcurl = res
         .as_ref()
         .map(|x| x.srcurl.to_string())
-        .unwrap_or_else(|| "".into());
+        .unwrap_or_default();
     let srcurl_base = res
         .and_then(|Src { srcurl, srctype }| {
             if regex_srchost(&srcurl) {
@@ -1047,7 +1047,7 @@ pub async fn packages(
                 }
             }
         })
-        .unwrap_or_else(|| "".into());
+        .unwrap_or_default();
 
     let ctx = Template {
         // package
@@ -1160,10 +1160,11 @@ pub async fn files(
         .bind(&repo)
         .fetch_optional(&db.abbs)
         .await?;
-    if pkg.is_none() {
+    let pkg = if let Some(pkg) = pkg {
+        pkg
+    } else {
         return not_found!("Package \"{name}\" ({version}) not found in {repo}");
-    }
-    let pkg = pkg.unwrap();
+    };
 
     let pkg_debtime = query_as("SELECT debtime FROM pv_packages WHERE filename=$1")
         .bind(&pkg.filename)
@@ -1319,15 +1320,15 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
 
     for issue in issues {
         if issue.repo.is_none() & issue.errno.is_none() {
-            total = issue.cnt.unwrap_or(0);
-            percent = issue.ratio.unwrap_or(0.0);
+            total = issue.cnt.unwrap_or_default();
+            percent = issue.ratio.unwrap_or_default();
             continue;
         }
 
         let errno = skip_none!(issue.errno);
         let repo = skip_none!(issue.repo);
-        let cnt = issue.cnt.unwrap_or(0);
-        let ratio = issue.ratio.unwrap_or(0.0);
+        let cnt = issue.cnt.unwrap_or_default();
+        let ratio = issue.ratio.unwrap_or_default();
 
         if (errno < 200) | (400..=409).contains(&errno) {
             // src issue
@@ -1406,7 +1407,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
                 let oldcnt = olddebs
                     .iter()
                     .find(|x| x.repo.as_ref() == Some(&r.name))
-                    .map_or(0, |x| x.oldcnt.unwrap_or(0));
+                    .map_or(0, |x| x.oldcnt.unwrap_or_default());
 
                 let row = DebIssuesMatrixRow {
                     arch: r.architecture.clone(),
