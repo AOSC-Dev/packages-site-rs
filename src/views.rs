@@ -1019,11 +1019,11 @@ pub async fn packages(
         .unwrap_or_else(|| "".into());
     let srcurl_base = res
         .and_then(|Src { srcurl, srctype }| {
-            if RE_SRCHOST.is_match(&srcurl) {
+            if regex_srchost(&srcurl) {
                 let v: Vec<_> = srcurl.split('/').take(5).collect();
                 Some(v.join("/"))
-            } else if RE_PYPI.is_match(&srcurl) {
-                let pypiname = if RE_PYPISRC.is_match(&srcurl) {
+            } else if regex_pypi(&srcurl) {
+                let pypiname = if regex_pypisrc(&srcurl) {
                     srcurl.split('/').nth_back(2)
                 } else {
                     srcurl
@@ -1879,7 +1879,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 
     #[derive(Debug, Serialize)]
     struct TemplateRevDep<'a> {
-        description: &'a String,
+        description: &'a str,
         deps: Vec<&'a &'a RevDep>,
     }
 
@@ -1922,7 +1922,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
     let revdeps = &DEP_REL_REV
         .iter()
         .filter_map(|(relationship, description)| {
-            if let Some(deps) = deps_map.get(relationship) {
+            if let Some(deps) = deps_map.get(&relationship.to_string()) {
                 let mut res = vec![];
                 for (_, pkggroup) in &deps.iter().group_by(|dep| &dep.package) {
                     let mut iter = pkggroup;

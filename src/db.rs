@@ -1,6 +1,5 @@
 use crate::config::Config;
 use anyhow::Result;
-use once_cell::sync::OnceCell;
 use serde::Serialize;
 use sqlx::{pool::PoolOptions, Executor, Pool, Postgres, Sqlite, SqliteConnection};
 
@@ -9,7 +8,6 @@ pub struct Db {
     pub pg: Pool<Postgres>,
 }
 
-static PISS_PATH: OnceCell<String> = OnceCell::new();
 pub const PAGESIZE: u32 = 60;
 
 impl Db {
@@ -17,17 +15,17 @@ impl Db {
         let opt = sqlx::sqlite::SqliteConnectOptions::new()
             .read_only(true)
             .immutable(true)
-            .foreign_keys(true)
+            .foreign_keys(false)
             .collation("vercomp", deb_version::compare_versions)
             .filename(&config.abbs)
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Off);
 
-        PISS_PATH.set(config.piss.clone()).unwrap();
+        let piss_path = Box::leak(config.piss.clone().into_boxed_str());
 
         let abbs: Pool<Sqlite> = PoolOptions::new()
             .after_connect(|conn: &mut SqliteConnection, _| {
                 Box::pin(async {
-                    let piss_path = PISS_PATH.get().unwrap();
+                    let piss_path = &*piss_path;
                     conn.execute(
                         format!("ATTACH DATABASE 'file:{piss_path}?mode=ro&immutable=1' AS piss")
                             .as_str(),

@@ -913,10 +913,8 @@ dependencies = [
  "html-escape",
  "indexmap",
  "itertools",
- "lazy_static",
  "mime_guess",
- "once_cell",
- "regex",
+ "proc-macro-regex",
  "rust-embed",
  "serde",
  "serde_json",
@@ -1012,6 +1010,19 @@ name = "ppv-lite86"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+
+[[package]]
+name = "proc-macro-regex"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25953f1376b0a33e2bcac2d7aa76029162ec6203536760c89e25d6a1f733c37d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex-syntax",
+ "syn",
+ "thiserror",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -1210,18 +1221,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.140"
+version = "1.0.141"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc855a42c7967b7c369eb5860f7164ef1f6f81c20c7cc1141f2a604e18723b03"
+checksum = "7af873f2c95b99fcb0bd0fe622a43e29514658873c8ceba88c4cb88833a22500"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.140"
+version = "1.0.141"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f2122636b9fe3b81f1cb25099fcf2d3f542cdb1d45940d56c713158884a05da"
+checksum = "75743a150d003dd863b51dc809bcad0d73f2102c53632f1e954e738192a3413f"
 dependencies = [
  "proc-macro2",
  "quote",

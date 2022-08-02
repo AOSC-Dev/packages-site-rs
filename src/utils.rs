@@ -8,7 +8,6 @@ use axum::response::IntoResponse;
 use axum::response::Response;
 use axum::Extension;
 use indexmap::IndexMap;
-use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::query_as;
@@ -564,7 +563,7 @@ impl Dependency {
         let mut res = vec![];
 
         for (rel, display_rel) in DEP_REL.iter() {
-            if let Some(rel) = map.get(rel) {
+            if let Some(rel) = map.get(*rel) {
                 let mut v: Vec<_> = rel.keys().collect();
                 v.sort();
 
@@ -573,7 +572,7 @@ impl Dependency {
                     pkgs.sort_by(|a, b| a.0.cmp(&b.0));
 
                     let dep = Self {
-                        relationship: display_rel.clone(),
+                        relationship: display_rel.to_string(),
                         arch: arch.clone(),
                         packages: pkgs,
                     };
@@ -669,54 +668,27 @@ macro_rules! skip_none {
 }
 pub(crate) use skip_none;
 
-lazy_static::lazy_static! {
-    pub static ref REPO_CAT:HashMap<String, String> = {
-        let mut map = HashMap::new();
-        map.insert("base".into(), "".into());
-        map.insert("bsp".into(), "BSP".into());
-        map.insert("overlay".into(), "Overlay".into());
-        map
-    };
+pub const REPO_CAT: [(&str, &str); 3] = [("base", ""), ("bsp", "BSP"), ("overlay", "Overlay")];
+const DEP_REL: [(&str, &str); 8] = [
+    ("PKGDEP", "Depends"),
+    ("BUILDDEP", "Depends (build)"),
+    ("PKGREP", "Replaces"),
+    ("PKGRECOM", "Recommends"),
+    ("PKGCONFL", "Conflicts"),
+    ("PKGBREAK", "Breaks"),
+    ("PKGPROV", "Provides"),
+    ("PKGSUG", "Suggests"),
+];
+pub const DEP_REL_REV: [(&str, &str); 4] = [
+    ("PKGDEP", "Depended by"),
+    ("BUILDDEP", "Depended by (build)"),
+    ("PKGRECOM", "Recommended by"),
+    ("PKGSUG", "Suggested by"),
+];
 
-    pub static ref DEP_REL:IndexMap<String, String> = {
-        let mut map = IndexMap::new();
-        map.insert("PKGDEP".into(),"Depends".into());
-        map.insert("BUILDDEP".into(), "Depends (build)".into());
-        map.insert("PKGREP".into(), "Replaces".into());
-        map.insert("PKGRECOM".into(), "Recommends".into());
-        map.insert("PKGCONFL".into(), "Conflicts".into());
-        map.insert("PKGBREAK".into(), "Breaks".into());
-        map.insert("PKGPROV".into(), "Provides".into());
-        map.insert("PKGSUG".into(), "Suggests".into());
-
-
-        map
-    };
-
-    pub static ref DEP_REL_REV:IndexMap<String, String> = {
-      let mut map = IndexMap::new();
-      map.insert("PKGDEP".into(),"Depended by".into());
-      map.insert("BUILDDEP".into(), "Depended by (build)".into());
-      map.insert("PKGRECOM".into(), "Recommended by".into());
-      map.insert("PKGSUG".into(), "Suggested by".into());
-
-
-      map
-  };
-
-    pub static ref RE_SRCHOST:Regex = {
-        Regex::new(r"^https://(github\.com|bitbucket\.org|gitlab\.com)").unwrap()
-    };
-
-    pub static ref RE_PYPI:Regex = {
-        Regex::new(r"^https?://pypi\.(python\.org|io)").unwrap()
-    };
-
-    pub static ref RE_PYPISRC:Regex = {
-        Regex::new(r"^https?://pypi\.(python\.org|io)/packages/source/").unwrap()
-    };
-
-}
+proc_macro_regex::regex!(pub regex_srchost r"^https://(github\.com|bitbucket\.org|gitlab\.com)");
+proc_macro_regex::regex!(pub regex_pypi r"^https?://pypi\.(python\.org|io)");
+proc_macro_regex::regex!(pub regex_pypisrc r"^https?://pypi\.(python\.org|io)/packages/source/");
 
 const SQL_GET_REPO_COUNT: &str = "
 SELECT
