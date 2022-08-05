@@ -20,15 +20,14 @@ impl Db {
             .filename(&config.abbs)
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Off);
 
-        let piss_path = Box::leak(config.piss.clone().into_boxed_str());
+        let attach_piss = Box::leak(format!("ATTACH DATABASE 'file:{}?mode=ro&immutable=1' AS piss",config.piss).into_boxed_str());
 
         let abbs: Pool<Sqlite> = PoolOptions::new()
             .after_connect(|conn: &mut SqliteConnection, _| {
                 Box::pin(async {
-                    let piss_path = &*piss_path;
+                    let attach_piss = &*attach_piss;
                     conn.execute(
-                        format!("ATTACH DATABASE 'file:{piss_path}?mode=ro&immutable=1' AS piss")
-                            .as_str(),
+                        attach_piss
                     )
                     .await?;
                     Ok(())
