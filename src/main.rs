@@ -1,5 +1,7 @@
 mod config;
 mod db;
+mod filters;
+mod sql;
 mod utils;
 mod views;
 
@@ -8,6 +10,7 @@ use axum_extra::routing::RouterExt;
 use config::Config;
 use std::sync::Arc;
 use tower_http::{services::ServeDir, trace::TraceLayer};
+use utils::fallback;
 use utils::Error;
 use views::*;
 
