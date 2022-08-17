@@ -889,13 +889,12 @@ pub async fn packages(
         .bind(&name)
         .fetch_all(&db.abbs)
         .await?;
-    let testing_vers: Vec<PackageTesting> = query_as(SQL_GET_PACKAGE_TESTING)
+    let testing_vers: HashMap<_, _> = query_as(SQL_GET_PACKAGE_TESTING)
         .bind(&name)
         .fetch_all(&db.abbs)
-        .await?;
-    let testing_vers: HashMap<_, _> = testing_vers
+        .await?
         .into_iter()
-        .map(|x| (x.version.clone(), x))
+        .map(|x: PackageTesting| (x.version.clone(), x))
         .collect();
 
     // 1. collect vers list from dpkgs, sorted by desc
@@ -1004,7 +1003,7 @@ pub async fn packages(
                         .iter()
                         .find(|d| (&d.reponame == repo) & (d.version == ver.version));
 
-                    if let Some(dpkg) = dpkg {
+                    dpkg.map(|dpkg| {
                         let (size, testing, repo) = (dpkg.size, dpkg.testing, dpkg.repo.clone());
                         DpkgMeta {
                             hasmeta: true,
@@ -1013,9 +1012,8 @@ pub async fn packages(
                             repo,
                             size,
                         }
-                    } else {
-                        DpkgMeta::default()
-                    }
+                    })
+                    .unwrap_or_default()
                 })
                 .collect_vec();
 
@@ -1057,46 +1055,40 @@ pub async fn packages(
     }
 
     // guess upstream url
-    let res = Src::parse(&pkg.srctype, &pkg.srcurl);
-    let srctype = res
-        .as_ref()
-        .map(|x| x.srctype.to_string())
-        .unwrap_or_default();
-    let srcurl = res
-        .as_ref()
-        .map(|x| x.srcurl.to_string())
-        .unwrap_or_default();
-    let srcurl_base = res
-        .and_then(|Src { srcurl, srctype }| {
-            if regex_srchost(&srcurl) {
-                let v: Vec<_> = srcurl.split('/').take(5).collect();
-                Some(v.join("/"))
-            } else if regex_pypi(&srcurl) {
-                let pypiname = if regex_pypisrc(&srcurl) {
-                    srcurl.split('/').nth_back(2)
-                } else {
-                    srcurl
-                        .split('/')
-                        .nth_back(1)
-                        .and_then(|s| s.rsplit_once('-').map(|x| x.0))
-                };
+    let (srcurl_base, srcurl, srctype) = match Src::parse(&pkg.srctype, &pkg.srcurl) {
+        Some(Src { srcurl, srctype }) => {
+            let srcurl_base = match srcurl {
+                _ if regex_srchost(&srcurl) => srcurl.split('/').take(5).collect_vec().join("/"),
+                _ if regex_pypi(&srcurl) => {
+                    let pypiname = if regex_pypisrc(&srcurl) {
+                        srcurl.split('/').nth_back(2)
+                    } else {
+                        srcurl
+                            .split('/')
+                            .nth_back(1)
+                            .and_then(|s| s.rsplit_once('-').map(|x| x.0))
+                    };
 
-                pypiname.map(|pypiname| format!("https://pypi.python.org/pypi/{pypiname}/"))
-            } else {
-                match srctype {
-                    SrcType::Tarball => srcurl.split_once('/').map(|x| x.0.to_string()),
-                    SrcType::Git => {
-                        if let Some(stripped) = srcurl.strip_prefix("git://") {
-                            Some(format!("http://{stripped}"))
-                        } else {
-                            Some(srcurl)
-                        }
-                    }
-                    _ => None,
+                    pypiname
+                        .map(|pypiname| format!("https://pypi.python.org/pypi/{pypiname}/"))
+                        .unwrap_or_default()
                 }
-            }
-        })
-        .unwrap_or_default();
+                _ => match srctype {
+                    SrcType::Tarball => srcurl
+                        .split_once('/')
+                        .map(|x| x.0.to_string())
+                        .unwrap_or_default(),
+                    SrcType::Git => srcurl
+                        .strip_prefix("git://")
+                        .map(|stripped| format!("http://{stripped}"))
+                        .unwrap_or(srcurl.clone()),
+                    _ => "".into(),
+                },
+            };
+            (srcurl_base, srcurl, srctype.to_string())
+        }
+        None => ("".into(), "".into(), "".into()),
+    };
 
     let ctx = Template {
         // package
