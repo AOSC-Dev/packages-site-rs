@@ -793,6 +793,7 @@ pub async fn packages(
 
     #[derive(Debug, Serialize)]
     struct Version {
+        testing: bool,
         version: String,
         url: String,
         branch: String,
@@ -817,6 +818,14 @@ pub async fn packages(
         path: String,
         tree: String,
         branch: String,
+    }
+
+    #[derive(FromRow)]
+    struct PackageTesting {
+        pub version: String,
+        pub tree: String,
+        pub branch: String,
+        pub spec_path: String,
     }
 
     #[derive(Template, Debug, Serialize)]
@@ -873,10 +882,20 @@ pub async fn packages(
             .await?;
 
     // Generate version matrix
+
     let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG)
         .bind(&name)
         .fetch_all(&db.abbs)
         .await?;
+    let testing_vers: Vec<PackageTesting> =
+        query_as("SELECT version,spec_path,tree,branch FROM package_testing WHERE package = ?")
+            .bind(&name)
+            .fetch_all(&db.abbs)
+            .await?;
+    let testing_vers: HashMap<_, _> = testing_vers
+        .into_iter()
+        .map(|x| (x.version.clone(), x))
+        .collect();
 
     // 1. collect vers list from dpkgs, sorted by desc
     let mut vers: HashSet<_> = dpkgs.iter().map(|x| x.version.clone()).collect();
@@ -884,12 +903,14 @@ pub async fn packages(
     if pkgintree & !fullver.is_empty() & !vers.contains(fullver) {
         vers.insert(fullver.clone());
     }
+    vers.extend(testing_vers.keys().cloned());
+
     let vers = vers
         .into_iter()
         .sorted_by(|a, b| deb_version::compare_versions(a, b).reverse())
         .collect_vec();
 
-    // 2. generate src_vers from SQL query
+    // 2.1 generate src_vers from SQL query
     let src_vers: Vec<PackageVersion> = query_as(SQL_GET_PACKAGE_VERSIONS)
         .bind(&name)
         .fetch_all(&db.abbs)
@@ -901,22 +922,33 @@ pub async fn packages(
 
     // 3. generate versions list
     let versions= vers.iter().map(|version| {
-        let branch = src_vers.get(version).cloned().unwrap_or_default();
-        let url = if !branch.is_empty() {
-            let (tree, section, directory) = (&pkg.tree, &pkg.section, &pkg.directory);
-            let category = if !pkg.category.is_empty() {
-                format!("{}-", pkg.category)
-            } else {
-                "".into()
-            };
-            format!(
-                "https://github.com/AOSC-Dev/{tree}/tree/{branch}/{category}{section}/{directory}/spec"
-            )
-        } else {
-            "".into()
-        };
+        let src = src_vers.get(version);
+        let testing = testing_vers.get(version);
+        match (testing,src) {
+            (Some(PackageTesting { tree, branch, spec_path,.. }),_) => {
+                let branch = branch.strip_prefix("origin/").unwrap_or(branch.as_str());
+                let url = format!(
+                    "https://github.com/AOSC-Dev/{tree}/tree/{branch}/{spec_path}"
+                );
+                Version { version: version.clone(), url, branch:branch.into(),testing:true }
+            },
+            (None,Some(src_branch)) => {
+                let (tree, section, directory) = (&pkg.tree, &pkg.section, &pkg.directory);
+                let category = if !pkg.category.is_empty() {
+                    format!("{}-", pkg.category)
+                } else {
+                    "".into()
+                };
+                let url = format!(
+                    "https://github.com/AOSC-Dev/{tree}/tree/{src_branch}/{category}{section}/{directory}/spec"
+                );
 
-        Version { version: version.clone(), url, branch }
+                Version { version: version.clone(), url, branch:src_branch.into(),testing:false }
+            },
+            (None,None) => {
+                Version { version: version.clone(), url:"".into(), branch:"".into(),testing:false }
+            }
+        }
     }).collect_vec();
 
     // 4. generate reponames list, sorted by asc

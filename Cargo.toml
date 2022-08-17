@@ -23,7 +23,7 @@ time = { version = "0.3.11", default-features = false, features = [
     "formatting",
 ] }
 textwrap = "0.15"
-sqlx = { version = "*", features = [
+sqlx = { version = "0.6.1", features = [
     "sqlite",
     "postgres",
     "runtime-tokio-rustls",
@@ -39,9 +39,6 @@ size = "0.4"
 itertools = "0.10.2"
 hex = "0.4.3"
 proc-macro-regex = "1.1.0"
-
-[profile.dev.package.sqlx-macros]
-opt-level = 3
 
 [profile.dev.package.askama_derive]
 opt-level = 3

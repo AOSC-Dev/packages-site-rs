@@ -74,8 +74,11 @@
     <th>Version</th>
     {% for version in versions -%}
     {% if !version.url.is_empty() -%}
-    <th class="dpkg-ver dpkg-{{ version.branch }}" title="{{ version.branch }}">
+
+
+    <th class="dpkg-ver dpkg-{{ version.branch }}" title="{{ version.branch }}" {% if version.testing %} style="background-color:hsl(185, 100%, 89%)" {% endif %} >
       <a href="{{ version.url }}">{{ version.version }}</a></th>
+
     {%- else -%}
     <th class="dpkg-ver">{{ version.version }}</th>
     {%- endif %}
