@@ -31,6 +31,7 @@
 {%- endif %}
 <a href="/qa/packages/{{ name|urlencode }}">QA Page</a>,
 <a href="https://github.com/AOSC-Dev/{{ tree }}/issues/new?template=bug-report.md&title={{ name|urlencode }}%3A%20">Report issues</a></p>
+
 {% if !srctype.is_empty() -%}
 <p><b class="pkg-field" title="auto detected">Upstream</b>:
 {% if !srcurl_base.is_empty() -%}
@@ -38,13 +39,30 @@
 <a href="{{ srcurl }}">({{ srctype }}) {{ version }}</a>
 {%- else -%}
 <a href="{{ srcurl }}">source ({{ srctype }})</a>
-{%- endif %}{% if hasupstream -%}, latest version
+{%- endif %}
+{% if hasupstream -%}, latest version
 <span class="pkg-upstream pkg-upstream-{{ upstream_ver_compare|fmt_ver_compare }}" title="{{ upstream_updated|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">
 <a href="{{ upstream_url }}">{{ upstream_version }}</a></span>
 {%- endif %}
 </p>
 {%- endif %}
+
+{% if !errors.is_empty() -%}
+<p><b class="pkg-field">Errors</b>:
+
+{% for PackageError{message,tree,branch,path} in errors %}
+<p>
+<a href="{{ "https://github.com/AOSC-Dev/{}/tree/{}/{}"|format(tree,branch,path) }}">{{path}}</a>:  {{ message }} 
+</p>
+
+{% endfor %}
+
+
+{%- endif %}
+
 </section>
+
+
 <h2>Available versions</h2>
 {% if full_version.is_empty() -%}
 <p class="pkg-deprecated">(Deprecated)</p>
@@ -65,7 +83,7 @@
   </tr>
 </thead>
 <tbody>
-{% for row in dpkg_matrix -%}
+{% for row in version_matrix -%}
   <tr>
     <td>{{ row.repo }}</td>
     {% for meta in row.meta -%}

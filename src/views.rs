@@ -811,6 +811,14 @@ pub async fn packages(
         url: String,
     }
 
+    #[derive(FromRow, Serialize, Debug)]
+    struct PackageError {
+        message: String,
+        path: String,
+        tree: String,
+        branch: String,
+    }
+
     #[derive(Template, Debug, Serialize)]
     #[template(path = "package.html")]
     struct Template<'a> {
@@ -822,6 +830,7 @@ pub async fn packages(
         category: &'a String,
         section: &'a String,
         dependencies: Vec<Dependency>,
+        errors: Vec<PackageError>,
         hasrevdep: bool,
         srctype: String,
         srcurl_base: String,
@@ -833,7 +842,7 @@ pub async fn packages(
         upstream_version: String,
         full_version: &'a String,
         versions: Vec<Version>,
-        dpkg_matrix: Vec<MatrixRow>,
+        version_matrix: Vec<MatrixRow>,
     }
 
     let mut pkg: Option<Package> = query_as(SQL_GET_PACKAGE_INFO)
@@ -855,6 +864,13 @@ pub async fn packages(
     } else {
         return not_found!("Package \"{}\" not found", name);
     };
+
+    // collect package error messages
+    let errors: Vec<PackageError> =
+        query_as("SELECT message,path,tree,branch FROM package_errors WHERE package = ?")
+            .bind(&name)
+            .fetch_all(&db.abbs)
+            .await?;
 
     // Generate version matrix
     let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG)
@@ -1064,9 +1080,12 @@ pub async fn packages(
         // dependencies
         dependencies: Dependency::parse_db_dependencies(&pkg.dependency),
 
+        // errors
+        errors,
+
         // dpkg_matrix
         versions,
-        dpkg_matrix,
+        version_matrix: dpkg_matrix,
 
         // upstream
         srctype,
