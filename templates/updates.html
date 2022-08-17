@@ -18,7 +18,7 @@
     <td class="pkg-name">
       <a href="/packages/{{ pkg.name }}">{{ pkg.name }}</a>
     </td>
-    <td class="pkg-version pkg-version-dpkg dpkg-ver-{{ pkg.ver_compare|fmt_ver_compare }}">
+    <td class="pkg-status-{{ pkg.status|fmt_pkg_status }} pkg-version pkg-version-dpkg dpkg-ver-{{ pkg.ver_compare|fmt_ver_compare }}">
       {{ pkg.dpkg_version }}</td>
     <td class="pkg-version">{{ pkg.full_version }}</td>
   </tr>

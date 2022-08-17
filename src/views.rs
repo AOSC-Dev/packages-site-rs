@@ -72,11 +72,10 @@ pub async fn changelog(
         pub timestamp: i64,
     }
 
-    let changes: Vec<Change> =
-        query_as("SELECT * FROM package_changes WHERE package = ? ORDER BY timestamp DESC")
-            .bind(&name)
-            .fetch_all(&db.abbs)
-            .await?;
+    let changes: Vec<Change> = query_as(SQL_GET_PACKAGE_CHANGELOG)
+        .bind(&name)
+        .fetch_all(&db.abbs)
+        .await?;
 
     if changes.is_empty() {
         return not_found!("Package \"{name}\" not found.");
@@ -581,6 +580,7 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
         full_version: String,
         commit_time: i64,
         ver_compare: i64,
+        status: i64,
     }
 
     #[derive(Template, Serialize)]
@@ -671,6 +671,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
         full_version: String,
         dpkg_version: String,
         description: String,
+        status: i64,
     }
 
     #[derive(Serialize)]
@@ -679,6 +680,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
         name: String,
         dpkg_version: String,
         description: String,
+        status: i64,
     }
 
     #[derive(Template, Serialize)]
@@ -718,6 +720,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
 
             PackageTemplate {
                 ver_compare,
+                status: pkg.status,
                 name: pkg.name,
                 dpkg_version: latest,
                 description: pkg.description,
@@ -875,11 +878,10 @@ pub async fn packages(
     };
 
     // collect package error messages
-    let errors: Vec<PackageError> =
-        query_as("SELECT message,path,tree,branch FROM package_errors WHERE package = ?")
-            .bind(&name)
-            .fetch_all(&db.abbs)
-            .await?;
+    let errors: Vec<PackageError> = query_as(SQL_GET_PACKAGE_ERRORS)
+        .bind(&name)
+        .fetch_all(&db.abbs)
+        .await?;
 
     // Generate version matrix
 
@@ -887,11 +889,10 @@ pub async fn packages(
         .bind(&name)
         .fetch_all(&db.abbs)
         .await?;
-    let testing_vers: Vec<PackageTesting> =
-        query_as("SELECT version,spec_path,tree,branch FROM package_testing WHERE package = ?")
-            .bind(&name)
-            .fetch_all(&db.abbs)
-            .await?;
+    let testing_vers: Vec<PackageTesting> = query_as(SQL_GET_PACKAGE_TESTING)
+        .bind(&name)
+        .fetch_all(&db.abbs)
+        .await?;
     let testing_vers: HashMap<_, _> = testing_vers
         .into_iter()
         .map(|x| (x.version.clone(), x))
