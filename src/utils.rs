@@ -147,9 +147,9 @@ pub mod filters {
             }
         }
 
-        return Err(askama::Error::Custom(
+        Err(askama::Error::Custom(
             anyhow::anyhow!("cannot format timestamp {timestamp} into RFC2822 format").into(),
-        ));
+        ))
     }
 
     pub fn cut(s: &str, len: usize) -> ::askama::Result<&str> {
@@ -449,7 +449,7 @@ pub async fn get_repo(repo: &str, db: &Ext) -> Result<Repo> {
     if let Some(repo) = repos.get(repo) {
         Ok(repo.clone())
     } else {
-        return not_found!("Repo \"{repo}\" not found.");
+        not_found!("Repo \"{repo}\" not found.")
     }
 }
 
@@ -521,7 +521,7 @@ pub async fn get_tree(tree: &str, db: &Ext) -> Result<Tree> {
     if let Some(tree) = trees.get(tree) {
         Ok(tree.clone())
     } else {
-        return not_found!("Source tree \"{tree}\" not found.");
+        not_found!("Source tree \"{tree}\" not found.")
     }
 }
 
