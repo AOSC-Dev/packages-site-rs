@@ -54,11 +54,7 @@ pub async fn static_files(
 }
 
 typed_path!("/changelog/:name", Changelog, name);
-pub async fn changelog(
-    Changelog { name }: Changelog,
-    q: Query,
-    db: Ext,
-) -> Result<impl IntoResponse> {
+pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(Debug, FromRow, Serialize)]
     struct Change {
         pub package: String,
@@ -125,18 +121,13 @@ pub async fn pkgtrie(_: PkgTrie, db: Ext) -> Result<impl IntoResponse> {
         }
     }
 
-    let pkgs: Vec<Package> = query_as("SELECT name FROM packages")
-        .fetch_all(&db.abbs)
-        .await?;
+    let pkgs: Vec<Package> = query_as("SELECT name FROM packages").fetch_all(&db.abbs).await?;
 
     let mut trie: Trie = Default::default();
     pkgs.iter().for_each(|pkg| trie.insert(&pkg.name));
     let packagetrie = trie.walk_tree().replace("{$:0}", "0");
 
-    build_resp(
-        mime::JAVASCRIPT.as_ref(),
-        format!("var pkgTrie = {packagetrie};"),
-    )
+    build_resp(mime::JAVASCRIPT.as_ref(), format!("var pkgTrie = {packagetrie};"))
 }
 
 typed_path!("/list.json", PkgList);
@@ -322,8 +313,7 @@ pub async fn tree(RouteTree { tree }: RouteTree, q: Query, db: Ext) -> Result<im
         packages: &'a Vec<TemplatePackage>,
     }
 
-    let (page, packages) =
-        get_page!(SQL_GET_PACKAGE_TREE, Package, q.get_page(), &db.abbs, &tree).await?;
+    let (page, packages) = get_page!(SQL_GET_PACKAGE_TREE, Package, q.get_page(), &db.abbs, &tree).await?;
 
     if packages.is_empty() {
         return not_found!("There's no packages.");
@@ -346,11 +336,7 @@ pub async fn tree(RouteTree { tree }: RouteTree, q: Query, db: Ext) -> Result<im
         })
         .collect();
 
-    let ctx = Template {
-        page,
-        tree,
-        packages,
-    };
+    let ctx = Template { page, tree, packages };
 
     let ctx_tsv = TemplateTsv { packages };
 
@@ -382,14 +368,7 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
     let repo = strip_prefix(&repo)?;
     get_repo(repo, &db).await?;
 
-    let (page, ref packages) = get_page!(
-        SQL_GET_PACKAGE_GHOST,
-        Package,
-        q.get_page(),
-        &db.abbs,
-        &repo
-    )
-    .await?;
+    let (page, ref packages) = get_page!(SQL_GET_PACKAGE_GHOST, Package, q.get_page(), &db.abbs, &repo).await?;
 
     if packages.is_empty() {
         return not_found!("There's no ghost packages.");
@@ -494,8 +473,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
                 .replace("&lt;&#x2F;b&gt;", "</b>")
                 .replace("%^&amp;", "");
 
-            let name_highlight =
-                html_escape::encode_safe(&pkg.name).replace(q, &format!("<b>{q}</b>"));
+            let name_highlight = html_escape::encode_safe(&pkg.name).replace(q, &format!("<b>{q}</b>"));
 
             PackageTemplate {
                 name_highlight,
@@ -595,10 +573,7 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
         packages: &'a Vec<Package>,
     }
 
-    let packages: &Vec<Package> = &query_as(SQL_GET_PACKAGE_NEW_LIST)
-        .bind(100)
-        .fetch_all(&db.abbs)
-        .await?;
+    let packages: &Vec<Package> = &query_as(SQL_GET_PACKAGE_NEW_LIST).bind(100).fetch_all(&db.abbs).await?;
 
     if packages.is_empty() {
         return not_found!("There's no updates.");
@@ -700,8 +675,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
     let repo = strip_prefix(&repo)?;
     get_repo(repo, &db).await?;
 
-    let (page, packages) =
-        get_page!(SQL_GET_PACKAGE_REPO, Package, q.get_page(), &db.abbs, repo).await?;
+    let (page, packages) = get_page!(SQL_GET_PACKAGE_REPO, Package, q.get_page(), &db.abbs, repo).await?;
 
     let packages = &packages
         .into_iter()
@@ -740,11 +714,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
 }
 
 typed_path!("/packages/:name", RoutePackage, name);
-pub async fn packages(
-    RoutePackage { name }: RoutePackage,
-    q: Query,
-    db: Ext,
-) -> Result<impl IntoResponse> {
+pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow, Debug, Serialize)]
     struct Package {
         name: String,
@@ -878,17 +848,11 @@ pub async fn packages(
     };
 
     // collect package error messages
-    let errors: Vec<PackageError> = query_as(SQL_GET_PACKAGE_ERRORS)
-        .bind(&name)
-        .fetch_all(&db.abbs)
-        .await?;
+    let errors: Vec<PackageError> = query_as(SQL_GET_PACKAGE_ERRORS).bind(&name).fetch_all(&db.abbs).await?;
 
     // Generate version matrix
 
-    let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG)
-        .bind(&name)
-        .fetch_all(&db.abbs)
-        .await?;
+    let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG).bind(&name).fetch_all(&db.abbs).await?;
     let testing_vers: HashMap<_, _> = query_as(SQL_GET_PACKAGE_TESTING)
         .bind(&name)
         .fetch_all(&db.abbs)
@@ -915,48 +879,66 @@ pub async fn packages(
         .bind(&name)
         .fetch_all(&db.abbs)
         .await?;
-    let src_vers: HashMap<_, _> = src_vers
-        .into_iter()
-        .map(|v| (v.fullver, v.branch))
-        .collect();
+    let src_vers: HashMap<_, _> = src_vers.into_iter().map(|v| (v.fullver, v.branch)).collect();
 
     // 3. generate versions list
-    let versions= vers.iter().map(|version| {
-        let src = src_vers.get(version);
-        let testing = testing_vers.get(version);
-        match (testing,src) {
-            (Some(PackageTesting { tree, branch, spec_path,.. }),_) => {
-                let branch = branch.strip_prefix("origin/").unwrap_or(branch.as_str());
-                let url = format!(
-                    "https://github.com/AOSC-Dev/{tree}/tree/{branch}/{spec_path}"
-                );
-                Version { version: version.clone(), url, branch:branch.into(),testing:true }
-            },
-            (None,Some(src_branch)) => {
-                let (tree, section, directory) = (&pkg.tree, &pkg.section, &pkg.directory);
-                let category = if !pkg.category.is_empty() {
-                    format!("{}-", pkg.category)
-                } else {
-                    "".into()
-                };
-                let url = format!(
-                    "https://github.com/AOSC-Dev/{tree}/tree/{src_branch}/{category}{section}/{directory}/spec"
-                );
+    let versions = vers
+        .iter()
+        .map(|version| {
+            let src = src_vers.get(version);
+            let testing = testing_vers.get(version);
+            match (testing, src) {
+                (
+                    Some(PackageTesting {
+                        tree,
+                        branch,
+                        spec_path,
+                        ..
+                    }),
+                    _,
+                ) => {
+                    let branch = branch.strip_prefix("origin/").unwrap_or(branch.as_str());
+                    let url = format!("https://github.com/AOSC-Dev/{tree}/tree/{branch}/{spec_path}");
+                    Version {
+                        version: version.clone(),
+                        url,
+                        branch: branch.into(),
+                        testing: true,
+                    }
+                }
+                (None, Some(src_branch)) => {
+                    let (tree, section, directory) = (&pkg.tree, &pkg.section, &pkg.directory);
+                    let category = if !pkg.category.is_empty() {
+                        format!("{}-", pkg.category)
+                    } else {
+                        "".into()
+                    };
+                    let url = format!(
+                        "https://github.com/AOSC-Dev/{tree}/tree/{src_branch}/{category}{section}/{directory}/spec"
+                    );
 
-                Version { version: version.clone(), url, branch:src_branch.into(),testing:false }
-            },
-            (None,None) => {
-                Version { version: version.clone(), url:"".into(), branch:"".into(),testing:false }
+                    Version {
+                        version: version.clone(),
+                        url,
+                        branch: src_branch.into(),
+                        testing: false,
+                    }
+                }
+                (None, None) => Version {
+                    version: version.clone(),
+                    url: "".into(),
+                    branch: "".into(),
+                    testing: false,
+                },
             }
-        }
-    }).collect_vec();
+        })
+        .collect_vec();
 
     // 4. generate reponames list, sorted by asc
     let reponames = if pkg.noarch {
         vec!["noarch".into()]
     } else if !pkg.tree_category.is_empty() & !pkg.fail_arch.is_empty() {
-        let fail_arch =
-            FailArch::from(&pkg.fail_arch).map_err(|_| anyhow!("invalid FAIL_ARCH format"))?;
+        let fail_arch = FailArch::from(&pkg.fail_arch).map_err(|_| anyhow!("invalid FAIL_ARCH format"))?;
         db_repos(&db)
             .await?
             .into_values()
@@ -1074,10 +1056,7 @@ pub async fn packages(
                         .unwrap_or_default()
                 }
                 _ => match srctype {
-                    SrcType::Tarball => srcurl
-                        .split_once('/')
-                        .map(|x| x.0.to_string())
-                        .unwrap_or_default(),
+                    SrcType::Tarball => srcurl.split_once('/').map(|x| x.0.to_string()).unwrap_or_default(),
                     SrcType::Git => srcurl
                         .strip_prefix("git://")
                         .map(|stripped| format!("http://{stripped}"))
@@ -1699,10 +1678,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
         return not_found!("Package \"{name}\" not found.");
     };
 
-    let issues: Vec<PkgIssue> = query_as(SQL_ISSUES_PACKAGE)
-        .bind(name)
-        .fetch_all(&db.pg)
-        .await?;
+    let issues: Vec<PkgIssue> = query_as(SQL_ISSUES_PACKAGE).bind(name).fetch_all(&db.pg).await?;
 
     let errno_examples = issues
         .iter()
@@ -1748,10 +1724,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
 
                     let mut summary = IndexSet::new();
                     let mut files_bypkg = IndexMap::new();
-                    for PkgIssue {
-                        filename, detail, ..
-                    } in issues
-                    {
+                    for PkgIssue { filename, detail, .. } in issues {
                         let filename = skip_none!(filename);
                         let detail = skip_none!(detail);
 
@@ -1842,11 +1815,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
 }
 
 typed_path!("/cleanmirror/*repo", CleanMirror, repo);
-pub async fn cleanmirror(
-    CleanMirror { repo }: CleanMirror,
-    q: Query,
-    db: Ext,
-) -> Result<impl IntoResponse> {
+pub async fn cleanmirror(CleanMirror { repo }: CleanMirror, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let reason: Option<HashSet<_>> = q
         .get_reason()
         .as_ref()
@@ -1978,21 +1947,17 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
                         res.append(&mut iter.collect_vec());
                     }
                 }
-                Some(TemplateRevDep {
-                    description,
-                    deps: res,
-                })
+                Some(TemplateRevDep { description, deps: res })
             } else {
                 None
             }
         })
         .collect_vec();
 
-    let sobreaks: Vec<Sobreak> =
-        query_as("SELECT dep_package, deplist FROM v_so_breaks_dep WHERE package=$1")
-            .bind(&name)
-            .fetch_all(&db.pg)
-            .await?;
+    let sobreaks: Vec<Sobreak> = query_as("SELECT dep_package, deplist FROM v_so_breaks_dep WHERE package=$1")
+        .bind(&name)
+        .fetch_all(&db.pg)
+        .await?;
 
     let toposort = |sobreaks: Vec<Sobreak>| {
         let mut data: HashMap<_, _> = sobreaks

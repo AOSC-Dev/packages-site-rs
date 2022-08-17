@@ -44,9 +44,7 @@ where
     HeaderValue: TryFrom<V>,
     <HeaderValue as TryFrom<V>>::Error: Into<axum::http::Error>,
 {
-    Ok(Response::builder()
-        .header(header::CONTENT_TYPE, mime)
-        .body(body)?)
+    Ok(Response::builder().header(header::CONTENT_TYPE, mime).body(body)?)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -110,15 +108,10 @@ pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse
                 let body = ctx_tsv.into_response();
                 build_resp(mime_guess::mime::TEXT_PLAIN.as_ref(), body).into_response()
             } else {
-                Error::NotSupported("cannot render current page into tsv format".to_string())
-                    .into_response()
+                Error::NotSupported("cannot render current page into tsv format".to_string()).into_response()
             }
         }
-        Some("json") => build_resp(
-            mime_guess::mime::JSON.as_ref(),
-            serde_json::to_string(&ctx)?,
-        )
-        .into_response(),
+        Some("json") => build_resp(mime_guess::mime::JSON.as_ref(), serde_json::to_string(&ctx)?).into_response(),
         _ => ctx.into_response(),
     })
 }
@@ -305,10 +298,7 @@ pub mod filters {
     pub fn len<T>(v: &Vec<T>) -> ::askama::Result<usize> {
         Ok(v.len())
     }
-    pub fn value_array<'a>(
-        json: &'a Value,
-        key: &'a str,
-    ) -> ::askama::Result<&'a Vec<serde_json::Value>> {
+    pub fn value_array<'a>(json: &'a Value, key: &'a str) -> ::askama::Result<&'a Vec<serde_json::Value>> {
         if let Some(v) = json.get(key) {
             if let Some(v) = v.as_array() {
                 Ok(v)
@@ -329,10 +319,7 @@ pub mod filters {
     }
 
     pub fn value_i32(json: &Value, key: &str) -> ::askama::Result<i32> {
-        Ok(json
-            .get(key)
-            .map(|v| v.as_i64().unwrap_or(0) as i32)
-            .unwrap_or(0))
+        Ok(json.get(key).map(|v| v.as_i64().unwrap_or(0) as i32).unwrap_or(0))
     }
 }
 
@@ -496,10 +483,7 @@ pub struct Repo {
 pub async fn db_repos(db: &Ext) -> Result<IndexMap<String, Repo>> {
     let repos: Vec<Repo> = query_as(SQL_GET_REPO_COUNT).fetch_all(&db.abbs).await?;
 
-    let res = repos
-        .into_iter()
-        .map(|repo| (repo.name.clone(), repo))
-        .collect();
+    let res = repos.into_iter().map(|repo| (repo.name.clone(), repo)).collect();
 
     Ok(res)
 }
@@ -517,10 +501,7 @@ pub struct Tree {
 pub async fn db_trees(db: &Ext) -> Result<IndexMap<String, Tree>> {
     let trees: Vec<Tree> = query_as(SQL_GET_TREES).fetch_all(&db.abbs).await?;
 
-    let res = trees
-        .into_iter()
-        .map(|tree| (tree.name.clone(), tree))
-        .collect();
+    let res = trees.into_iter().map(|tree| (tree.name.clone(), tree)).collect();
 
     Ok(res)
 }
