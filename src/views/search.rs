@@ -71,8 +71,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
         }
     }
 
-    let qesc = &q;
-    //let qesc = RE_FTS5_COLSPEC.replace(&q, r#""\1""#); WIP
+    let qesc = format!("\"{q}\"");
 
     let (page, packages) = get_page!(
         SQL_SEARCH_PACKAGES_DESC,
