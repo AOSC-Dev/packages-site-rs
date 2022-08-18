@@ -614,9 +614,9 @@ SELECT
 FROM
     pv_package_files
 WHERE
-    package = $ 1
-    AND version = $ 2
-    AND repo = $ 3
+    package = $1
+    AND version = $2
+    AND repo = $3
     AND ftype != 5
 ORDER BY
     filename
@@ -629,9 +629,9 @@ SELECT
 FROM
     pv_package_sodep
 WHERE
-    package = $ 1
-    AND version = $ 2
-    AND repo = $ 3
+    package = $1
+    AND version = $2
+    AND repo = $3
 ORDER BY
     depends,
     name,
@@ -728,8 +728,8 @@ FROM
         FROM
             pv_package_issues
         WHERE
-            errno = $ 1
-            AND coalesce(repo = $ 2, TRUE)
+            errno = $1
+            AND coalesce(repo = $2, TRUE)
         GROUP BY
             package,
             version,
@@ -782,7 +782,7 @@ FROM
                 FROM
                     pv_package_issues
                 WHERE
-                    package = $ 1
+                    package = $1
             ) q1
     ) q2
 WHERE
