@@ -1,8 +1,8 @@
+use axum::response::Response;
 use crate::sql::*;
 use crate::utils::*;
 use anyhow::Context;
 use askama::Template;
-use askama_axum::Response;
 use axum::body::{boxed, Full};
 use axum::headers::{ETag, IfNoneMatch};
 use axum::http::{header, StatusCode};

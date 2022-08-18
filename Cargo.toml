@@ -16,8 +16,7 @@ serde = { version = "1", features = ["derive"] }
 tower-http = { version = "0.3.4", features = ["trace", "fs"] }
 toml = "0.5.9"
 anyhow = "1.0.58"
-askama = { git = "https://github.com/djc/askama", features = ["with-axum"] }
-askama_axum = { git = "https://github.com/djc/askama" }
+askama = "0.11"
 thiserror = "1.0.31"
 time = { version = "0.3.11", default-features = false, features = [
     "formatting",

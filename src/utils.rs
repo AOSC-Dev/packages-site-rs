@@ -6,6 +6,7 @@ use askama::Template;
 use axum::async_trait;
 use axum::extract::FromRequest;
 use axum::extract::RequestParts;
+use axum::http;
 use axum::http::header;
 use axum::http::HeaderValue;
 use axum::http::StatusCode;
@@ -87,7 +88,7 @@ impl IntoResponse for Error {
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
-        (status_code, ctx).into_response()
+        (status_code, into_response(&ctx, None)).into_response()
     }
 }
 
@@ -100,7 +101,22 @@ macro_rules! not_found {
 pub(crate) use not_found;
 pub(crate) use typed_path;
 
-pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse>(
+
+pub fn into_response<T: Template>(t: &T,mine:Option<&'static str>) -> Response {
+    match t.render() {
+        Ok(body) => {
+            let headers = [(
+                http::header::CONTENT_TYPE,
+                http::HeaderValue::from_static(mine.unwrap_or(T::MIME_TYPE)),
+            )];
+
+            (headers, body).into_response()
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+pub fn render<T: Template + Serialize, V: Template>(
     ctx: T,
     ctx_tsv: Option<V>,
     q: &Query,
@@ -108,14 +124,13 @@ pub fn render<T: Template + Serialize + IntoResponse, V: Template + IntoResponse
     Ok(match q.get_type() {
         Some("tsv") => {
             if let Some(ctx_tsv) = ctx_tsv {
-                let body = ctx_tsv.into_response();
-                build_resp(mime_guess::mime::TEXT_PLAIN.as_ref(), body).into_response()
+                into_response(&ctx_tsv, Some(mime_guess::mime::TEXT_PLAIN.as_ref()))
             } else {
                 Error::NotSupported("cannot render current page into tsv format".to_string()).into_response()
             }
         }
         Some("json") => build_resp(mime_guess::mime::JSON.as_ref(), serde_json::to_string(&ctx)?).into_response(),
-        _ => ctx.into_response(),
+        _ => into_response(&ctx,None),
     })
 }
 
