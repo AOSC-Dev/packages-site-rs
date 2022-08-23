@@ -487,7 +487,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
                 421 | 431 | 432 => {
                     #[derive(Debug, Serialize)]
                     struct Custom {
-                        summary: Vec<String>,
+                        summary: IndexSet<String>,
                         files_bypkg: Vec<FileByPkg>,
                     }
 
@@ -537,13 +537,9 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
                             version,
                             files,
                         })
-                        .collect_vec();
+                        .collect();
 
-                    serde_json::to_value(Custom {
-                        summary: summary.into_iter().collect_vec(),
-                        files_bypkg: files_bypkg.into_iter().collect_vec(),
-                    })
-                    .unwrap_or_default()
+                    serde_json::to_value(Custom { summary, files_bypkg }).unwrap_or_default()
                 }
                 _ => serde_json::Value::Null,
             };

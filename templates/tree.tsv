@@ -1,4 +1,0 @@
-Package	DPKG Version	Spec Version	Version Comparison	Available in
-{% for pkg in packages -%}
-{{ pkg.name }}	{{ pkg.dpkg_version }}	{{ pkg.full_version }}	{{ pkg.ver_compare }}	{{ pkg.dpkg_repos }}
-{% endfor %}

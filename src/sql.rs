@@ -110,31 +110,6 @@ ORDER BY
     pkgcount DESC
 ";
 
-pub const SQL_GET_PACKAGE_TREE: &str = "
-SELECT
-    name,
-    dpkg.dpkg_version dpkg_version,
-    group_concat(DISTINCT dpkg.reponame) dpkg_availrepos,
-    description,
-    full_version,
-    ifnull(
-        CASE
-            WHEN dpkg_version IS NOT null THEN (dpkg_version > full_version COLLATE vercomp) - (dpkg_version < full_version COLLATE vercomp)
-            ELSE -1
-        END,
-        -2
-    ) ver_compare
-FROM
-    v_packages
-    LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = v_packages.name
-WHERE
-    tree = ?
-GROUP BY
-    name
-ORDER BY
-    name
-";
-
 pub const SQL_GET_PACKAGE_LAGGING: &str = "
 SELECT
     p.name name,
@@ -341,29 +316,6 @@ ORDER BY
     q.ftrank,
     vp.commit_time DESC,
     q.name
-";
-
-pub const SQL_GET_PACKAGE_SRCUPD: &str = "
-SELECT
-    vp.name,
-    vp.version,
-    vpu.version upstream_version,
-    vpu.updated,
-    vpu.url upstream_url,
-    vpu.tarball upstream_tarball
-FROM
-    v_packages vp
-    INNER JOIN piss.v_package_upstream vpu ON vpu.package = vp.name
-WHERE
-    vp.tree = ?
-    AND (NOT vpu.version LIKE (vp.version || '%'))
-    AND (vp.version < vpu.version COLLATE vercomp)
-    AND (
-        ? IS NULL
-        OR vp.section = ?
-    )
-ORDER BY
-    vp.name
 ";
 
 pub const SQL_GET_PACKAGE_NEW_LIST: &str = "

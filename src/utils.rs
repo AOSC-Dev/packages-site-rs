@@ -101,8 +101,7 @@ macro_rules! not_found {
 pub(crate) use not_found;
 pub(crate) use typed_path;
 
-
-pub fn into_response<T: Template>(t: &T,mine:Option<&'static str>) -> Response {
+pub fn into_response<T: Template>(t: &T, mine: Option<&'static str>) -> Response {
     match t.render() {
         Ok(body) => {
             let headers = [(
@@ -116,11 +115,7 @@ pub fn into_response<T: Template>(t: &T,mine:Option<&'static str>) -> Response {
     }
 }
 
-pub fn render<T: Template + Serialize, V: Template>(
-    ctx: T,
-    ctx_tsv: Option<V>,
-    q: &Query,
-) -> Result<Response> {
+pub fn render<T: Template + Serialize, V: Template>(ctx: T, ctx_tsv: Option<V>, q: &Query) -> Result<Response> {
     Ok(match q.get_type() {
         Some("tsv") => {
             if let Some(ctx_tsv) = ctx_tsv {
@@ -130,7 +125,7 @@ pub fn render<T: Template + Serialize, V: Template>(
             }
         }
         Some("json") => build_resp(mime_guess::mime::JSON.as_ref(), serde_json::to_string(&ctx)?).into_response(),
-        _ => into_response(&ctx,None),
+        _ => into_response(&ctx, None),
     })
 }
 
@@ -183,7 +178,6 @@ pub struct QueryExtractor {
     page: Option<String>,
     q: Option<String>,
     noredir: Option<bool>,
-    section: Option<String>,
     reason: Option<String>,
     r#type: Option<String>,
 }
@@ -239,10 +233,6 @@ impl QueryExtractor {
 
     pub fn get_noredir(&self) -> bool {
         self.noredir.unwrap_or(false)
-    }
-
-    pub fn get_section(&self) -> &Option<String> {
-        &self.section
     }
 
     pub fn get_reason(&self) -> &Option<String> {
@@ -319,15 +309,6 @@ pub async fn db_trees(db: &Ext) -> Result<IndexMap<String, Tree>> {
     let res = trees.into_iter().map(|tree| (tree.name.clone(), tree)).collect();
 
     Ok(res)
-}
-
-pub async fn get_tree(tree: &str, db: &Ext) -> Result<Tree> {
-    let trees = db_trees(db).await?;
-    if let Some(tree) = trees.get(tree) {
-        Ok(tree.clone())
-    } else {
-        not_found!("Source tree \"{tree}\" not found.")
-    }
 }
 
 pub fn ver_rel(ver_compare: i64) -> &'static str {

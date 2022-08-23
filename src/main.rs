@@ -18,8 +18,6 @@ use views::*;
 async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter("tower_http::trace=trace,packages_site=debug,sqlx::query=warn")
-        //.with_file(true)
-        //.with_line_number(true)
         .init();
 
     let config = Config::from_file("config.toml").unwrap();
@@ -33,10 +31,8 @@ async fn main() {
         .typed_get(pkglist)
         .typed_get(lagging)
         .typed_get(missing)
-        .typed_get(tree)
         .typed_get(ghost)
         .typed_get(search)
-        .typed_get(srcupd)
         .typed_get(updates)
         .typed_get(repo)
         .typed_get(packages)
