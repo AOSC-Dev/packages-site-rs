@@ -152,21 +152,33 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     // Generate version matrix
 
     let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG).bind(&name).fetch_all(&db.abbs).await?;
-    let testing_vers: HashMap<_, _> = query_as(SQL_GET_PACKAGE_TESTING)
+
+    // 1.1 process package testing
+    let testing_vers: Vec<PackageTesting> = query_as(SQL_GET_PACKAGE_TESTING)
         .bind(&name)
         .fetch_all(&db.abbs)
-        .await?
-        .into_iter()
-        .map(|x: PackageTesting| (x.version.clone(), x))
-        .collect();
+        .await?;
+    let mut testing_ver_count = HashMap::new();
+    testing_vers.iter().for_each(|PackageTesting { version,.. } | {testing_ver_count.entry(version.clone()).and_modify(|e| *e+=1).or_insert(1);});
+    let testing_vers: HashMap<_,_> = testing_vers.into_iter().map(|testing| {
+        let version = if testing_ver_count[&testing.version] >= 2 {
+            let version = &testing.version;
+            let branch = testing.branch.strip_prefix("origin/").unwrap_or(testing.branch.as_str());
+                format!("{version}-{branch}")
+        }else{
+            testing.version.clone()
+        };
+        (version,testing)
+    }).collect();
 
-    // 1. collect vers list from dpkgs, sorted by desc
+    // 1.2 collect vers list from dpkgs and package_testing, sorted by desc
     let mut vers: HashSet<_> = dpkgs.iter().map(|x| x.version.clone()).collect();
     let fullver = &pkg.full_version;
     if pkgintree & !fullver.is_empty() & !vers.contains(fullver) {
         vers.insert(fullver.clone());
     }
     vers.extend(testing_vers.keys().cloned());
+
 
     let vers = vers
         .into_iter()
