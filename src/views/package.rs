@@ -159,17 +159,28 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         .fetch_all(&db.abbs)
         .await?;
     let mut testing_ver_count = HashMap::new();
-    testing_vers.iter().for_each(|PackageTesting { version,.. } | {testing_ver_count.entry(version.clone()).and_modify(|e| *e+=1).or_insert(1);});
-    let testing_vers: HashMap<_,_> = testing_vers.into_iter().map(|testing| {
-        let version = if testing_ver_count[&testing.version] >= 2 {
-            let version = &testing.version;
-            let branch = testing.branch.strip_prefix("origin/").unwrap_or(testing.branch.as_str());
+    testing_vers.iter().for_each(|PackageTesting { version, .. }| {
+        testing_ver_count
+            .entry(version.clone())
+            .and_modify(|e| *e += 1)
+            .or_insert(1);
+    });
+    let testing_vers: HashMap<_, _> = testing_vers
+        .into_iter()
+        .map(|testing| {
+            let version = if testing_ver_count[&testing.version] >= 2 {
+                let version = &testing.version;
+                let branch = testing
+                    .branch
+                    .strip_prefix("origin/")
+                    .unwrap_or(testing.branch.as_str());
                 format!("{version}-{branch}")
-        }else{
-            testing.version.clone()
-        };
-        (version,testing)
-    }).collect();
+            } else {
+                testing.version.clone()
+            };
+            (version, testing)
+        })
+        .collect();
 
     // 1.2 collect vers list from dpkgs and package_testing, sorted by desc
     let mut vers: HashSet<_> = dpkgs.iter().map(|x| x.version.clone()).collect();
@@ -178,7 +189,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         vers.insert(fullver.clone());
     }
     vers.extend(testing_vers.keys().cloned());
-
 
     let vers = vers
         .into_iter()
