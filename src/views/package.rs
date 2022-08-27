@@ -35,6 +35,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         srctype: String,
         srcurl: String,
         hasrevdep: bool,
+        spec_path: String,
     }
 
     #[derive(Debug, Serialize)]
@@ -228,14 +229,10 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
                     }
                 }
                 (None, Some(src_branch)) => {
-                    let (tree, section, directory) = (&pkg.tree, &pkg.section, &pkg.directory);
-                    let category = if !pkg.category.is_empty() {
-                        format!("{}-", pkg.category)
-                    } else {
-                        "".into()
-                    };
                     let url = format!(
-                        "https://github.com/AOSC-Dev/{tree}/tree/{src_branch}/{category}{section}/{directory}/spec"
+                        "https://github.com/AOSC-Dev/{tree}/tree/{src_branch}/{spec_path}",
+                        tree = &pkg.tree,
+                        spec_path = &pkg.spec_path
                     );
 
                     Version {
@@ -625,7 +622,7 @@ pub async fn files(
     struct Package {
         package: String,
         version: String,
-        // architecture: String,
+        architecture: String,
         repo: String,
         maintainer: String,
         installed_size: i64,

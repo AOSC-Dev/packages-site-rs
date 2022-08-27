@@ -439,6 +439,7 @@ SELECT
     spfailarch.value fail_arch,
     spsrc.key srctype,
     spsrc.value srcurl,
+    spec_path,
     EXISTS(
         SELECT
             1
