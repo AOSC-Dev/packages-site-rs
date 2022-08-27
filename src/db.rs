@@ -17,11 +17,12 @@ impl Db {
             .immutable(true)
             .foreign_keys(false)
             .collation("vercomp", deb_version::compare_versions)
-            .filename(&config.abbs)
+            .filename(&config.db.abbs)
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Off);
 
-        let attach_piss =
-            Box::leak(format!("ATTACH DATABASE 'file:{}?mode=ro&immutable=1' AS piss", config.piss).into_boxed_str());
+        let attach_piss = Box::leak(
+            format!("ATTACH DATABASE 'file:{}?mode=ro&immutable=1' AS piss", config.db.piss).into_boxed_str(),
+        );
 
         let abbs: Pool<Sqlite> = PoolOptions::new()
             .after_connect(|conn: &mut SqliteConnection, _| {
@@ -34,7 +35,7 @@ impl Db {
             .connect_with(opt)
             .await?;
 
-        let pg = PoolOptions::new().connect_lazy(&config.pg_conn)?;
+        let pg = PoolOptions::new().connect_lazy(&config.db.pg_conn)?;
 
         Ok(Db { abbs, pg })
     }

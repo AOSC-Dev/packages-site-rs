@@ -1,12 +1,25 @@
 use anyhow::Result;
+use serde::Deserialize;
 use std::{fs::File, io::Read, path::Path};
-#[derive(Debug, Clone, serde::Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Config {
+    pub db: Db,
+    pub global: Global,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct Db {
+    pub pg_conn: String,
     pub abbs: String,
     pub piss: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct Global {
     pub data: String,
     pub listen: String,
-    pub pg_conn: String,
+    pub log: String,
+    pub sqlx_log: String,
 }
 
 impl Config {

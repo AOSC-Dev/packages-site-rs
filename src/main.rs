@@ -9,18 +9,24 @@ use axum::{handler::Handler, routing::get_service, Extension, Router};
 use axum_extra::routing::RouterExt;
 use config::Config;
 use std::sync::Arc;
+use tower_http::trace::DefaultOnResponse;
 use tower_http::{services::ServeDir, trace::TraceLayer};
+use tracing::Level;
 use utils::fallback;
 use utils::Error;
 use views::*;
 
 #[tokio::main]
 async fn main() {
+    let config = Config::from_file("config.toml").unwrap();
     tracing_subscriber::fmt()
-        .with_env_filter("tower_http::trace=trace,packages_site=debug,sqlx::query=warn")
+        .with_env_filter(format!(
+            "tower_http::trace=trace,packages_site={log},sqlx::query={sqlx_log}",
+            log = config.global.log,
+            sqlx_log = config.global.sqlx_log
+        ))
         .init();
 
-    let config = Config::from_file("config.toml").unwrap();
     let db = Arc::new(db::Db::open(&config).await.unwrap());
 
     let app = Router::new()
@@ -46,13 +52,17 @@ async fn main() {
         .typed_get(revdep)
         .nest(
             "/data",
-            get_service(ServeDir::new(&config.data)).handle_error(|err| async { Error::from(err) }),
+            get_service(ServeDir::new(&config.global.data)).handle_error(|err| async { Error::from(err) }),
         )
         .fallback(fallback.into_service())
-        .layer(TraceLayer::new_for_http())
+        .layer(
+            TraceLayer::new_for_http()
+                .on_request(())
+                .on_response(DefaultOnResponse::new().level(Level::INFO)),
+        )
         .layer(Extension(db));
 
-    axum::Server::bind(&config.listen.parse().unwrap())
+    axum::Server::bind(&config.global.listen.parse().unwrap())
         .serve(app.into_make_service())
         .await
         .unwrap();

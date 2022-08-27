@@ -1,5 +1,10 @@
+[global]
+listen = "0.0.0.0:3000"
+data = "data"
+log = "info"
+sqlx_log = "warn"
+
+[db]
 abbs = "data/abbs.db"
 piss = "data/piss.db"
-data = "data"
-listen = "0.0.0.0:3000"
 pg_conn = "postgresql://postgres@localhost/packages"
