@@ -5,6 +5,7 @@ mod sql;
 mod utils;
 mod views;
 
+use anyhow::Result;
 use axum::{handler::Handler, routing::get_service, Extension, Router};
 use axum_extra::routing::RouterExt;
 use config::Config;
@@ -17,8 +18,8 @@ use utils::Error;
 use views::*;
 
 #[tokio::main]
-async fn main() {
-    let config = Config::from_file("config.toml").unwrap();
+async fn main() -> Result<()> {
+    let config = Config::from_file("config.toml")?;
     tracing_subscriber::fmt()
         .with_env_filter(format!(
             "tower_http::trace=trace,packages_site={log},sqlx::query={sqlx_log}",
@@ -27,7 +28,7 @@ async fn main() {
         ))
         .init();
 
-    let db = Arc::new(db::Db::open(&config).await.unwrap());
+    let db = Arc::new(db::Db::open(&config).await?);
 
     let app = Router::new()
         .typed_get(static_files)
@@ -62,8 +63,9 @@ async fn main() {
         )
         .layer(Extension(db));
 
-    axum::Server::bind(&config.global.listen.parse().unwrap())
+    axum::Server::bind(&config.global.listen.parse()?)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }

@@ -23,7 +23,7 @@
     {% for file in files %}
     <li><span class="pkg-ls-perm">{{ file.perm|ls_perm(file.ftype) }}</span> <span class="pkg-ls-user">{{ file.uname
             }}({{ file.uid }})</span> <span class="pkg-ls-user">{{ file.gname }}({{ file.gid }})</span> <span
-            class="pkg-ls-size num">{{ file.size|sizeof_fmt_ls }}</span> {% if file.filename.as_ref().is_some() -%} {{file.filename.as_ref().unwrap()}} {%- endif %}</li>
+            class="pkg-ls-size num">{{ file.size|sizeof_fmt_ls }}</span> {{ file.filename|fmt_default }} </li>
     {%- endfor %}
 </ul>
 {% endblock main %}
