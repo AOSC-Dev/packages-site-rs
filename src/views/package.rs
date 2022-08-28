@@ -430,6 +430,7 @@ pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Resu
         pub package: String,
         pub githash: String,
         pub version: String,
+        pub tree: String,
         pub branch: String,
         pub urgency: String,
         pub message: String,

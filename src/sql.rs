@@ -27,6 +27,7 @@ SELECT
     package,
     githash,
     version,
+    tree,
     branch,
     urgency,
     message,

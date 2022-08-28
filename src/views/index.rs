@@ -35,13 +35,7 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
         .map(|(category_capital, category)| {
             let repos = repos
                 .iter()
-                .filter_map(|(_name, repo)| {
-                    if &repo.category == category_capital {
-                        Some(repo.clone())
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|(_name, repo)| (&repo.category == category_capital).then_some(repo.clone()))
                 .collect();
 
             (category.to_string(), repos)
