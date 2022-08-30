@@ -371,9 +371,40 @@ SELECT
     name,
     description,
     full_version,
-    commit_time
+    commit_time,
+    ifnull(
+        CASE
+            WHEN dpkg.dpkg_version IS NOT null THEN (dpkg.dpkg_version > full_version COLLATE vercomp) - (dpkg.dpkg_version < full_version COLLATE vercomp)
+            ELSE -1
+        END,
+        -2
+    ) ver_compare,
+CASE
+        WHEN error.package IS NOT NULL THEN 1
+        ELSE CASE
+            WHEN testing.package IS NOT NULL THEN 2
+            ELSE 0
+        END
+    END AS status
 FROM
     v_packages
+    LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = v_packages.name
+    LEFT JOIN (
+        SELECT
+            DISTINCT package
+        FROM
+            package_testing
+    ) testing ON testing.package = v_packages.name
+    LEFT JOIN (
+        SELECT
+            DISTINCT package
+        FROM
+            package_errors
+    ) error ON error.package = v_packages.name
+WHERE
+    full_version IS NOT null
+GROUP BY
+    name
 ORDER BY
     commit_time DESC,
     name ASC

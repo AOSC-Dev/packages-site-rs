@@ -16,6 +16,8 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
         description: String,
         full_version: String,
         commit_time: i64,
+        ver_compare: i64,
+        status: i64,
     }
 
     #[derive(Template, Serialize)]
