@@ -3,7 +3,6 @@ use crate::sql::*;
 use crate::utils::*;
 use askama::Template;
 use axum::response::IntoResponse;
-use indexmap::IndexMap;
 use itertools::Itertools;
 use serde::Serialize;
 use sqlx::{query_as, FromRow};
@@ -25,7 +24,6 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
     struct Template {
         total: i64,
         repo_categories: Vec<(String, Vec<Repo>)>,
-        source_trees: IndexMap<String, Tree>,
         updates: Vec<Package>,
     }
 
@@ -50,7 +48,6 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let ctx = Template {
         total,
         repo_categories,
-        source_trees,
         updates,
     };
 

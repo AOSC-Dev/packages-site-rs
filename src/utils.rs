@@ -301,7 +301,6 @@ pub struct Tree {
     pub url: String,
     pub date: i64,
     pub pkgcount: i64,
-    pub srcupd: i64,
 }
 pub async fn db_trees(db: &Ext) -> Result<IndexMap<String, Tree>> {
     let trees: Vec<Tree> = query_as(SQL_GET_TREES).fetch_all(&db.abbs).await?;

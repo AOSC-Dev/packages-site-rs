@@ -84,8 +84,7 @@ SELECT
     category,
     url,
     max(date) date,
-    count(name) pkgcount,
-    sum(ver_compare) srcupd
+    count(name) pkgcount
 FROM
     (
         SELECT
@@ -93,17 +92,10 @@ FROM
             p.tree,
             t.category,
             t.url,
-            p.commit_time date,
-            (
-                CASE
-                    WHEN vpu.version LIKE (p.version || '%') THEN 0
-                    ELSE p.version < vpu.version COLLATE vercomp
-                END
-            ) ver_compare
+            p.commit_time date
         FROM
             v_packages p
             INNER JOIN trees t ON t.name = p.tree
-            LEFT JOIN piss.v_package_upstream vpu ON vpu.package = p.name
     ) q1
 GROUP BY
     tree
@@ -549,17 +541,6 @@ WHERE
     v.package = ?
 ORDER BY
     b.priority DESC
-";
-
-pub const SQL_GET_PISS_VERSION: &str = "
-SELECT
-    version,
-    updated,
-    url
-FROM
-    piss.v_package_upstream
-WHERE
-    package = ?
 ";
 
 pub const SQL_GET_PACKAGE_DEB_LOCAL: &str = "

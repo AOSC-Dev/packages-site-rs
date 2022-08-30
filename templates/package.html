@@ -40,10 +40,6 @@
 {%- else -%}
 <a href="{{ srcurl }}">source ({{ srctype }})</a>
 {%- endif %}
-{% if hasupstream -%}, latest version
-<span class="pkg-upstream pkg-upstream-{{ upstream_ver_compare|fmt_ver_compare }}" title="{{ upstream_updated|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">
-<a href="{{ upstream_url }}">{{ upstream_version }}</a></span>
-{%- endif %}
 </p>
 {%- endif %}
 

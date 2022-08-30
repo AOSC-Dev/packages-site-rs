@@ -1,7 +1,7 @@
 use crate::config::Config;
 use anyhow::Result;
 use serde::Serialize;
-use sqlx::{pool::PoolOptions, Executor, Pool, Postgres, Sqlite, SqliteConnection};
+use sqlx::{pool::PoolOptions, Pool, Postgres, Sqlite};
 
 pub struct Db {
     pub abbs: Pool<Sqlite>,
@@ -20,20 +20,7 @@ impl Db {
             .filename(&config.db.abbs)
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Off);
 
-        let attach_piss = Box::leak(
-            format!("ATTACH DATABASE 'file:{}?mode=ro&immutable=1' AS piss", config.db.piss).into_boxed_str(),
-        );
-
-        let abbs: Pool<Sqlite> = PoolOptions::new()
-            .after_connect(|conn: &mut SqliteConnection, _| {
-                Box::pin(async {
-                    let attach_piss = &*attach_piss;
-                    conn.execute(attach_piss).await?;
-                    Ok(())
-                })
-            })
-            .connect_with(opt)
-            .await?;
+        let abbs: Pool<Sqlite> = PoolOptions::new().connect_with(opt).await?;
 
         let pg = PoolOptions::new().connect_lazy(&config.db.pg_conn)?;
 

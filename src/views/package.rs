@@ -78,13 +78,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         fullver: String,
     }
 
-    #[derive(FromRow)]
-    struct ResUpstream {
-        version: String,
-        updated: i64,
-        url: String,
-    }
-
     #[derive(FromRow, Serialize, Debug)]
     struct PackageError {
         message: String,
@@ -117,11 +110,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         srctype: String,
         srcurl_base: String,
         srcurl: String,
-        hasupstream: bool,
-        upstream_ver_compare: i64,
-        upstream_url: String,
-        upstream_updated: i64,
-        upstream_version: String,
         full_version: &'a String,
         versions: Vec<Version>,
         version_matrix: Vec<MatrixRow>,
@@ -324,36 +312,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         })
         .collect_vec();
 
-    // deal with upstream related variables
-    let mut upstream_url = String::new();
-    let mut upstream_updated = 0i64;
-    let mut upstream_version = String::new();
-    let mut upstream_ver_compare = 0i64;
-    let mut hasupstream = false;
-    let res: Option<ResUpstream> = query_as(SQL_GET_PISS_VERSION)
-        .bind(&name)
-        .fetch_optional(&db.abbs)
-        .await?;
-    if let Some(res) = res {
-        if !pkg.version.is_empty() & !res.version.is_empty() {
-            upstream_url = res.url;
-            upstream_updated = res.updated;
-            upstream_version = res.version.clone();
-            hasupstream = true;
-
-            if res.version.starts_with(&pkg.version) {
-                upstream_ver_compare = 0; // same
-            } else {
-                let cmp = deb_version::compare_versions(&pkg.version, &res.version);
-                upstream_ver_compare = match cmp {
-                    std::cmp::Ordering::Less => -1,   // old
-                    std::cmp::Ordering::Equal => 0,   // same
-                    std::cmp::Ordering::Greater => 1, // new
-                };
-            }
-        }
-    }
-
     // guess upstream url
     let (srcurl_base, srcurl, srctype) = match Src::parse(&pkg.srctype, &pkg.srcurl) {
         Some(Src { srcurl, srctype }) => {
@@ -413,11 +371,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         srctype,
         srcurl_base,
         srcurl,
-        upstream_ver_compare,
-        upstream_url,
-        upstream_updated,
-        upstream_version,
-        hasupstream,
     };
 
     render::<_, Template>(ctx, None, &q)

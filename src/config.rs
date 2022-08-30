@@ -11,7 +11,6 @@ pub struct Config {
 pub struct Db {
     pub pg_conn: String,
     pub abbs: String,
-    pub piss: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

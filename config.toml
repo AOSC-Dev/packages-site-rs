@@ -6,5 +6,4 @@ sqlx_log = "warn"
 
 [db]
 abbs = "data/abbs.db"
-piss = "data/piss.db"
 pg_conn = "postgresql://postgres@localhost/packages"
