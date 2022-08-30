@@ -15,7 +15,9 @@ SELECT
     message,
     path,
     tree,
-    branch
+    branch,
+    line,
+    col
 FROM
     package_errors
 WHERE

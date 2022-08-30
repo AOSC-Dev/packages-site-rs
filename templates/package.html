@@ -46,9 +46,9 @@
 {% if !errors.is_empty() -%}
 <p><b class="pkg-field">Errors</b>:
 
-{% for PackageError{message,tree,branch,path} in errors %}
+{% for PackageError{message, tree, branch, path, line, col} in errors %}
 <p>
-<a href="{{ "https://github.com/AOSC-Dev/{}/tree/{}/{}"|format(tree,branch,path) }}">{{path}}</a>:  {{ message }} 
+<a href="{{ "https://github.com/AOSC-Dev/{}/tree/{}/{}"|format(tree,branch,path) }}{% match line %}{% when Some with (line) %}{{ "#L{}"|format(line) }}{% when None %}{% endmatch %}  ">{{path}}</a>:  {{ message }} 
 </p>
 
 {% endfor %}
