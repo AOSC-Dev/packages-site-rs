@@ -1,4 +1,4 @@
-use crate::db::{get_page, Page};
+use crate::db::{Page, Paginator};
 use crate::filters;
 use crate::sql::*;
 use crate::utils::*;
@@ -6,7 +6,7 @@ use askama::Template;
 use axum::response::IntoResponse;
 use itertools::Itertools;
 use serde::Serialize;
-use sqlx::FromRow;
+use sqlx::{query_as, FromRow};
 
 typed_path!("/repo/*repo", RouteRepo, repo);
 pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<impl IntoResponse> {
@@ -45,7 +45,10 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
     let repo = strip_prefix(&repo)?;
     get_repo(repo, &db).await?;
 
-    let (page, packages) = get_page!(SQL_GET_PACKAGE_REPO, Package, q.get_page(), &db.abbs, repo).await?;
+    let (packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_REPO)
+        .bind(repo)
+        .fetch_page(&db.abbs, q.get_page())
+        .await?;
 
     let packages = &packages
         .into_iter()
@@ -109,15 +112,11 @@ pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<imp
     let repo = strip_prefix(&repo)?;
     let architecture = get_repo(repo, &db).await?.architecture;
 
-    let (page, ref packages) = get_page!(
-        SQL_GET_PACKAGE_LAGGING,
-        Package,
-        q.get_page(),
-        &db.abbs,
-        repo,
-        architecture
-    )
-    .await?;
+    let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_LAGGING)
+        .bind(repo)
+        .bind(architecture)
+        .fetch_page(&db.abbs, q.get_page())
+        .await?;
 
     if packages.is_empty() {
         return not_found!("There's no lagging packages.");
@@ -162,16 +161,12 @@ pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<imp
     let repo = strip_prefix(&repo)?;
     let repo = get_repo(repo, &db).await?;
 
-    let (page, ref packages) = get_page!(
-        SQL_GET_PACKAGE_MISSING,
-        Package,
-        q.get_page(),
-        &db.abbs,
-        &repo.realname,
-        &repo.architecture,
-        &repo.realname
-    )
-    .await?;
+    let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_MISSING)
+        .bind(&repo.realname)
+        .bind(&repo.architecture)
+        .bind(&repo.realname)
+        .fetch_page(&db.abbs, q.get_page())
+        .await?;
 
     if packages.is_empty() {
         return not_found!("There's no missing packages.");
@@ -213,7 +208,10 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
     let repo = strip_prefix(&repo)?;
     get_repo(repo, &db).await?;
 
-    let (page, ref packages) = get_page!(SQL_GET_PACKAGE_GHOST, Package, q.get_page(), &db.abbs, &repo).await?;
+    let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_GHOST)
+        .bind(&repo)
+        .fetch_page(&db.abbs, q.get_page())
+        .await?;
 
     if packages.is_empty() {
         return not_found!("There's no ghost packages.");

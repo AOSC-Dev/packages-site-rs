@@ -90,3 +90,12 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
 
     render(ctx, Some(ctx_tsv), &q)
 }
+
+typed_path!("/license", License);
+pub async fn license(_: License) -> Result<impl IntoResponse> {
+    #[derive(Template)]
+    #[template(path = "license.html")]
+    struct Template;
+
+    Ok(into_response(&Template {}, None))
+}

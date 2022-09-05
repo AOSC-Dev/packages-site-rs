@@ -1,11 +1,11 @@
-use crate::db::{get_page, Page};
+use crate::db::{Page, Paginator};
 use crate::filters;
 use crate::sql::*;
 use crate::utils::*;
 use askama::Template;
 use axum::response::{IntoResponse, Redirect};
 use serde::Serialize;
-use sqlx::FromRow;
+use sqlx::{query_as, FromRow};
 
 typed_path!("/search", Search);
 pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoResponse> {
@@ -71,21 +71,18 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
         }
     }
 
-    let qesc = format!("\"{q}\"");
+    //let qesc = format!("\"{q}\"");
+    let qesc = q.to_string();
 
-    let (page, packages) = get_page!(
-        SQL_SEARCH_PACKAGES_DESC,
-        Package,
-        query.get_page(),
-        &db.abbs,
-        &qesc,
-        &qesc,
-        &qesc,
-        &qesc,
-        &qesc,
-        &qesc
-    )
-    .await?;
+    let (packages, page): (Vec<Package>, _) = query_as(SQL_SEARCH_PACKAGES_DESC)
+        .bind(&qesc)
+        .bind(&qesc)
+        .bind(&qesc)
+        .bind(&qesc)
+        .bind(&qesc)
+        .bind(&qesc)
+        .fetch_page(&db.abbs, query.get_page())
+        .await?;
 
     let packages = &packages
         .into_iter()

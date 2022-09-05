@@ -51,6 +51,7 @@ async fn main() -> Result<()> {
         .typed_get(qa_package)
         .typed_get(cleanmirror)
         .typed_get(revdep)
+        .typed_get(license)
         .nest(
             "/data",
             get_service(ServeDir::new(&config.global.data)).handle_error(|err| async { Error::from(err) }),

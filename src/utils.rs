@@ -27,13 +27,13 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub type Ext = Extension<Arc<Db>>;
 
 macro_rules! typed_path {
-    ($path:literal,$name:ident) => {
-        #[derive(serde::Deserialize,axum_macros::TypedPath)]
+    ($path: literal, $name: ident) => {
+        #[derive(serde::Deserialize, axum_macros::TypedPath)]
         #[typed_path($path)]
         pub struct $name{}
     };
-    ($path:literal,$name:ident,$($field:ident),+ $(,)?) => {
-        #[derive(serde::Deserialize,axum_macros::TypedPath)]
+    ($path: literal, $name: ident, $($field: ident),+ $(,)?) => {
+        #[derive(serde::Deserialize, axum_macros::TypedPath)]
         #[typed_path($path)]
         pub struct $name {
             $(

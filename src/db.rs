@@ -1,14 +1,16 @@
 use crate::config::Config;
 use anyhow::Result;
+use axum::async_trait;
+use itertools::Itertools;
 use serde::Serialize;
-use sqlx::{pool::PoolOptions, Pool, Postgres, Sqlite};
+use sqlx::{pool::PoolOptions, query::QueryAs, Database, Executor, FromRow, IntoArguments, Pool, Postgres, Sqlite};
 
 pub struct Db {
     pub abbs: Pool<Sqlite>,
     pub pg: Pool<Postgres>,
 }
 
-pub const PAGESIZE: u32 = 60;
+const PAGESIZE: u32 = 60;
 
 impl Db {
     pub async fn open(config: &Config) -> Result<Self> {
@@ -21,7 +23,6 @@ impl Db {
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Off);
 
         let abbs: Pool<Sqlite> = PoolOptions::new().connect_with(opt).await?;
-
         let pg = PoolOptions::new().connect_lazy(&config.db.pg_conn)?;
 
         Ok(Db { abbs, pg })
@@ -35,55 +36,57 @@ pub struct Page {
     pub count: u32,
 }
 
-macro_rules! get_page {
-    ($sql:expr,$name:ident,$cur:expr,$db:expr,$($bind_value:expr),+ $(,)?) =>  {
-        async {
-
-            if let Some(cur) = $cur {
-                use sqlx::Row;
-                use crate::db::PAGESIZE;
-                let sql = format!("SELECT COUNT(*) OVER (),*  FROM ({}) LIMIT ? OFFSET ?",$sql);
-                let query = sqlx::query(&sql);
-                $(
-                    let query = query.bind($bind_value);
-                )*
-                let mut count:Option<u32> = None;
-                let rows = query.bind(PAGESIZE).bind((cur - 1) * PAGESIZE).try_map(|ref row| {
-                    count.get_or_insert(row.try_get(0)?);
-                    $name::from_row(row)
-                }).fetch_all($db).await;
-
-                let count = count.unwrap_or(0);
-                let ceil = |a,b| (a + b - 1) / b;
-                match rows {
-                    Ok(rows) => {
-                        let page = crate::db::Page {
-                            cur,
-                            max:ceil(count,PAGESIZE),
-                            count,
-                        };
-                        Ok((page,rows))},
-                    Err(e) => Err(e),
-                }
-            }else{
-                let query = sqlx::query_as($sql);
-                $(
-                    let query = query.bind($bind_value);
-                )*
-
-                let rows:Vec<$name> = query.fetch_all($db).await?;
-
-                let page = crate::db::Page {
-                    cur:1,
-                    max:0,
-                    count:rows.len() as u32,
-                };
-
-                Ok((page,rows))
-            }
-
-        }
-    }
+#[async_trait]
+pub trait Paginator<'q, DB, O, A>
+where
+    DB: Database,
+    A: 'q + IntoArguments<'q, DB>,
+    O: Send + Unpin + for<'r> FromRow<'r, DB::Row>,
+{
+    async fn fetch_page<'e, 'c: 'e, E>(self, executor: E, cur: Option<u32>) -> Result<(Vec<O>, Page), sqlx::Error>
+    where
+        'q: 'e,
+        Self: Sized,
+        E: 'e + Executor<'c, Database = DB>,
+        DB: 'e,
+        O: 'e,
+        A: 'e;
 }
 
-pub(crate) use get_page;
+#[async_trait]
+impl<'q, DB, O, A> Paginator<'q, DB, O, A> for QueryAs<'q, DB, O, A>
+where
+    DB: Database,
+    A: 'q + IntoArguments<'q, DB>,
+    O: Send + Unpin + for<'r> FromRow<'r, DB::Row>,
+{
+    async fn fetch_page<'e, 'c: 'e, E>(mut self, executor: E, cur: Option<u32>) -> Result<(Vec<O>, Page), sqlx::Error>
+    where
+        'q: 'e,
+        Self: Sized,
+        E: 'e + Executor<'c, Database = DB>,
+        DB: 'e,
+        O: 'e,
+        A: 'e,
+    {
+        let v = self.fetch_all(executor).await?;
+        let count = v.len() as u32;
+        let ceil = |a, b| (a + b - 1) / b;
+
+        let (res, page) = if let Some(cur) = cur {
+            let res = v
+                .into_iter()
+                .chunks(PAGESIZE as usize)
+                .into_iter()
+                .nth((cur - 1) as usize)
+                .map_or(vec![], |i| i.collect_vec());
+            let max = ceil(count, PAGESIZE);
+
+            (res, Page { cur, max, count })
+        } else {
+            (v, Page { cur: 1, max: 0, count })
+        };
+
+        Ok((res, page))
+    }
+}
