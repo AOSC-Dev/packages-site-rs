@@ -82,7 +82,7 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
     let packages: &Vec<Package> = &query_as(SQL_GET_PACKAGE_NEW_LIST).bind(100).fetch_all(&db.abbs).await?;
 
     if packages.is_empty() {
-        return not_found!("There's no updates.");
+        not_found!("There's no updates.");
     }
 
     let ctx = Template { packages };

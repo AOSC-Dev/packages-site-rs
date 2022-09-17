@@ -48,7 +48,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
     }
 
     #[derive(Debug, FromRow)]
-    struct IssueRes {
+    struct IssueResult {
         repo: Option<String>,
         errno: Option<i32>,
         cnt: Option<i64>,
@@ -106,7 +106,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
         .fetch_all(&db.abbs)
         .await?;
 
-    let issues: Vec<IssueRes> = query_as(SQL_ISSUES_STATS).fetch_all(&db.pg).await?;
+    let issues: Vec<IssueResult> = query_as(SQL_ISSUES_STATS).fetch_all(&db.pg).await?;
     let mut total = 0;
     let mut percent = 0.0;
 
@@ -156,31 +156,24 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let srcissues_matrix = &tree_branches
         .iter()
         .filter_map(|r| {
-            if let Some(errs) = src_issues.get(&(r.tree.clone(), r.branch.clone())) {
+            src_issues.get(&(r.tree.clone(), r.branch.clone())).map(|errs| {
                 let issues = srcissues_key
                     .iter()
                     .map(|err| {
-                        if let Some((cnt, ratio)) = errs.get(err) {
-                            Issue {
-                                errno: *err,
-                                ratio: *ratio,
-                                cnt: *cnt,
-                            }
-                        } else {
-                            Issue::default()
-                        }
+                        errs.get(err).map_or(Issue::default(), |(cnt, ratio)| Issue {
+                            errno: *err,
+                            ratio: *ratio,
+                            cnt: *cnt,
+                        })
                     })
                     .collect_vec();
 
-                let row = SrcIssuesMatrixRow {
+                SrcIssuesMatrixRow {
                     tree: r.tree.clone(),
                     branch: r.branch.clone(),
                     issues,
-                };
-                Some(row)
-            } else {
-                None
-            }
+                }
+            })
         })
         .collect_vec();
 
@@ -188,19 +181,15 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let debissues_matrix = &repos
         .values()
         .filter_map(|r| {
-            if let Some(errs) = deb_issues.get(&(&r.architecture, &r.branch)) {
+            deb_issues.get(&(&r.architecture, &r.branch)).map(|errs| {
                 let issues = debissues_key
                     .iter()
                     .map(|err| {
-                        if let Some((cnt, ratio)) = errs.get(err) {
-                            Issue {
-                                errno: *err,
-                                ratio: *ratio,
-                                cnt: *cnt,
-                            }
-                        } else {
-                            Issue::default()
-                        }
+                        errs.get(err).map_or(Issue::default(), |(cnt, ratio)| Issue {
+                            errno: *err,
+                            ratio: *ratio,
+                            cnt: *cnt,
+                        })
                     })
                     .collect_vec();
 
@@ -209,16 +198,13 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
                     .find(|x| x.repo.as_ref() == Some(&r.name))
                     .map_or(0, |x| x.oldcnt.unwrap_or_default());
 
-                let row = DebIssuesMatrixRow {
+                DebIssuesMatrixRow {
                     arch: r.architecture.clone(),
                     branch: r.branch.clone(),
                     oldcnt,
                     issues,
-                };
-                Some(row)
-            } else {
-                None
-            }
+                }
+            })
         })
         .collect_vec();
 
@@ -227,16 +213,12 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
         .fetch_all(&db.pg)
         .await?
         .into_iter()
-        .filter_map(|p: Recent| {
-            if let Some(package) = p.package {
-                Some(Package {
-                    package,
-                    version: p.version.unwrap_or_default(),
-                    errs: p.errs,
-                })
-            } else {
-                None
-            }
+        .filter_map(|Recent { package, version, errs }: Recent| {
+            package.map(|package| Package {
+                package,
+                version: version.unwrap_or_default(),
+                errs,
+            })
         })
         .collect_vec();
 
@@ -303,18 +285,15 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
     };
 
     if let Some(repo) = &repo {
-        let res = query(
-            "
-        SELECT name FROM dpkg_repos WHERE name=? UNION ALL 
-        SELECT name FROM tree_branches WHERE name=?",
-        )
-        .bind(&repo)
-        .bind(&repo)
-        .fetch_optional(&db.abbs)
-        .await?;
+        let res =
+            query("SELECT name FROM dpkg_repos WHERE name=? UNION ALL SELECT name FROM tree_branches WHERE name=?")
+                .bind(&repo)
+                .bind(&repo)
+                .fetch_optional(&db.abbs)
+                .await?;
 
         if res.is_none() {
-            return not_found!("Repo \"{repo}\" not found.");
+            not_found!("Repo \"{repo}\" not found.");
         }
     }
 
@@ -429,7 +408,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
     let pkg = if let Some(pkg) = pkg {
         pkg
     } else {
-        return not_found!("Package \"{name}\" not found.");
+        not_found!("Package \"{name}\" not found.");
     };
 
     let issues: Vec<PkgIssue> = query_as(SQL_ISSUES_PACKAGE).bind(name).fetch_all(&db.pg).await?;

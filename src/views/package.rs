@@ -134,7 +134,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     let pkg = if let Some(pkg) = pkg {
         pkg
     } else {
-        return not_found!("Package \"{}\" not found", name);
+        not_found!("Package \"{name}\" not found");
     };
 
     // collect package error messages
@@ -400,7 +400,7 @@ pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Resu
         .await?;
 
     if changes.is_empty() {
-        return not_found!("Package \"{name}\" not found.");
+        not_found!("Package \"{name}\" not found.");
     }
 
     #[derive(Template, Serialize)]
@@ -421,7 +421,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         .fetch_optional(&db.abbs)
         .await?;
     if res.is_none() {
-        return not_found!("Package \"{name}\" not found.");
+        not_found!("Package \"{name}\" not found.");
     }
 
     #[derive(Debug, FromRow, Serialize)]
@@ -635,7 +635,7 @@ pub async fn files(
     let pkg = if let Some(pkg) = pkg {
         pkg
     } else {
-        return not_found!("Package \"{name}\" ({version}) not found in {repo}");
+        not_found!("Package \"{name}\" ({version}) not found in {repo}");
     };
 
     let pkg_debtime = query_as("SELECT debtime FROM pv_packages WHERE filename=$1")

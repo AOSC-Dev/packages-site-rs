@@ -94,7 +94,7 @@ impl IntoResponse for Error {
 
 macro_rules! not_found {
     ($($arg:tt)*) => {
-        Err(Error::NotFound(format!($($arg)*)))
+        return Err(Error::NotFound(format!($($arg)*)))
     };
 }
 
@@ -247,8 +247,8 @@ pub fn strip_prefix(s: &str) -> Result<&str> {
 
 pub async fn get_repo(repo: &str, db: &Ext) -> Result<Repo> {
     let repos = db_repos(db).await?;
-    if let Some(repo) = repos.get(repo) {
-        Ok(repo.clone())
+    if let Some(repo) = repos.get(repo).cloned() {
+        Ok(repo)
     } else {
         not_found!("Repo \"{repo}\" not found.")
     }

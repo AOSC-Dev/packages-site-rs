@@ -119,7 +119,7 @@ pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<imp
         .await?;
 
     if packages.is_empty() {
-        return not_found!("There's no lagging packages.");
+        not_found!("There's no lagging packages.");
     }
 
     let ctx = Template {
@@ -169,7 +169,7 @@ pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<imp
         .await?;
 
     if packages.is_empty() {
-        return not_found!("There's no missing packages.");
+        not_found!("There's no missing packages.");
     }
 
     let ctx = Template {
@@ -214,7 +214,7 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
         .await?;
 
     if packages.is_empty() {
-        return not_found!("There's no ghost packages.");
+        not_found!("There's no ghost packages.");
     }
 
     let ctx = Template {
