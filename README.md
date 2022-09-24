@@ -34,7 +34,7 @@ cargo build --release
 
 # 运行
 
-你需要先去参照 `abbs-meta` 生成 `abbs.db` ，或者你也可以从 [packages-site](http://packages.aosc.io/data/abbs.db) 上直接下载，将其放在 data 目录中。如果你想运行 `Package Quality Assurance` 相关的页面，你需要参照 `[p-vender-rs](http://github.com/AOSC-Dev/p-vector-rs)` 生成对应的 PostgreSQL 数据库。
+你需要先去参照 `abbs-meta` 生成 `abbs.db` ，或者你也可以从 [packages-site](http://packages.aosc.io/data/abbs.db) 上直接下载，将其放在 data 目录中。如果你想运行 `Package Quality Assurance` 相关的页面，你需要参照 [`p-vender-rs`](http://github.com/AOSC-Dev/p-vector-rs) 生成对应的 PostgreSQL 数据库。
 
 ```bash
 # run packages-site
