@@ -1,5 +1,3 @@
-# packages-site
-
 # 背景
 
 本项目是开源之夏课题 [AOSC 的软件包信息站重实现](https://summer-ospp.ac.cn/#/org/prodetail/22f3e0080) 的具体实现。
