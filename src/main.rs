@@ -19,7 +19,7 @@ use views::*;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "abbs-meta")]
+#[structopt(name = "packages-site")]
 struct Opt {
     /// specify configuration file
     #[structopt(short, long, default_value = "config.toml")]
