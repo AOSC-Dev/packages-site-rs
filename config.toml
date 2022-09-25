@@ -1,9 +1,9 @@
 [global]
 listen = "0.0.0.0:3000"
-data = "data"
-log = "info"
-sqlx_log = "warn"
+data = "data" # path to data directory
+log = "info" # general logging level
+sqlx_log = "info" # sqlx logging level. Set to `info` or `debug` to get SQL query which has executed
 
 [db]
-abbs = "data/abbs.db"
-pg_conn = "postgresql://postgres@localhost/packages"
+abbs = "data/abbs.db" # path to abbs.db. Generally, it should be placed in `data` directory
+pg_conn = "postgresql://postgres@localhost/packages" # postgres connection, provided by p-vender-rs
