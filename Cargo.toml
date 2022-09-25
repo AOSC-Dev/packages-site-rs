@@ -38,6 +38,7 @@ size = "0.4"
 itertools = "0.10"
 hex = "0.4"
 proc-macro-regex = "^1"
+structopt = "0.3"
 
 [profile.dev.package.askama_derive]
 opt-level = 3

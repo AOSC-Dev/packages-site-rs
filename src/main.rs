@@ -16,10 +16,20 @@ use tracing::Level;
 use utils::fallback;
 use utils::Error;
 use views::*;
+use structopt::StructOpt;
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "abbs-meta")]
+struct Opt {
+    /// specify configuration file
+    #[structopt(short, long, default_value = "config.toml")]
+    config: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config = Config::from_file("config.toml")?;
+    let opt = Opt::from_args();
+    let config = Config::from_file(opt.config)?;
     tracing_subscriber::fmt()
         .with_env_filter(format!(
             "tower_http::trace=trace,packages_site={log},sqlx::query={sqlx_log}",
