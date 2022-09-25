@@ -1,9 +1,7 @@
-use std::fmt::Display;
-
-use itertools::Itertools;
-use serde_json::Value;
-
 use crate::utils::{issue_code, ver_rel};
+use serde::Deserialize;
+use serde_json::Value;
+use std::fmt::Display;
 
 macro_rules! bail {
     ($($arg:tt)*) => {
@@ -164,18 +162,17 @@ pub fn value_string(json: &Value, key: &str) -> ::askama::Result<String> {
 }
 
 pub fn value_array_string(json: &Value, key: &str) -> ::askama::Result<Vec<String>> {
-    Ok(json
-        .get(key)
-        .map(|v| {
-            v.as_array()
-                .map(|v| {
-                    v.iter()
-                        .map(|v| v.as_str().unwrap_or_default().to_string())
-                        .collect_vec()
-                })
-                .unwrap_or_default()
-        })
-        .unwrap_or_default())
+    #[derive(Deserialize)]
+    struct StringList {
+        #[serde(flatten, default)]
+        list: Vec<String>,
+    }
+
+    if let Some(list) = json.get(key).and_then(|v| Some(StringList::deserialize(v).ok()?.list)) {
+        Ok(list)
+    } else {
+        bail!("failed to extract list from value {json:?}")
+    }
 }
 
 pub fn len<T>(v: &Vec<T>) -> ::askama::Result<usize> {
@@ -186,10 +183,10 @@ pub fn value_array<'a>(json: &'a Value, key: &'a str) -> ::askama::Result<&'a Ve
         if let Some(v) = v.as_array() {
             Ok(v)
         } else {
-            bail!("value {v:?} is not array type")
+            bail!("value `{v:?}` is not array type")
         }
     } else {
-        bail!("no such key {key} in {json:?}")
+        bail!("no such key `{key}` in {json:?}")
     }
 }
 
