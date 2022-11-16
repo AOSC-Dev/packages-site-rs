@@ -252,6 +252,7 @@ SELECT
     NULL commit_time,
     '' committer,
     '' dependency,
+    '' spec_path,
     0 noarch,
     NULL fail_arch,
     NULL srctype,
@@ -465,7 +466,7 @@ SELECT
     spfailarch.value fail_arch,
     spsrc.key srctype,
     spsrc.value srcurl,
-    spec_path,
+    v_packages.spec_path spec_path,
     EXISTS(
         SELECT
             1
