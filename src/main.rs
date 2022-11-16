@@ -10,13 +10,13 @@ use axum::{handler::Handler, routing::get_service, Extension, Router};
 use axum_extra::routing::RouterExt;
 use config::Config;
 use std::sync::Arc;
+use structopt::StructOpt;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::Level;
 use utils::fallback;
 use utils::Error;
 use views::*;
-use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "packages-site")]
