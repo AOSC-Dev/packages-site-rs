@@ -26,7 +26,7 @@ anyhow = "^1"
 askama = "0.11"
 thiserror = "^1"
 time = { version = "0.3", default-features = false, features = ["formatting"] }
-textwrap = "0.15"
+textwrap = "0.16"
 rust-embed = "^6"
 mime_guess = "^2"
 deb-version = "0.1"
