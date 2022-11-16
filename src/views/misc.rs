@@ -85,7 +85,7 @@ pub async fn pkgtrie(_: PkgTrie, db: Ext) -> Result<impl IntoResponse> {
     pkgs.iter().for_each(|pkg| trie.insert(&pkg.name));
     let packagetrie = trie.walk_tree().replace("{$:0}", "0");
 
-    build_resp(mime::JAVASCRIPT.as_ref(), format!("var pkgTrie = {packagetrie};"))
+    build_resp(mime::APPLICATION_JAVASCRIPT.as_ref(), format!("var pkgTrie = {packagetrie};"))
 }
 
 typed_path!("/list.json", PkgList);
