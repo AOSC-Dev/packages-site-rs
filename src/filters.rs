@@ -1,5 +1,5 @@
 use crate::utils::{issue_code, ver_rel};
-use serde::Deserialize;
+use itertools::Itertools;
 use serde_json::Value;
 use std::fmt::Display;
 
@@ -162,17 +162,18 @@ pub fn value_string(json: &Value, key: &str) -> ::askama::Result<String> {
 }
 
 pub fn value_array_string(json: &Value, key: &str) -> ::askama::Result<Vec<String>> {
-    #[derive(Deserialize)]
-    struct StringList {
-        #[serde(flatten, default)]
-        list: Vec<String>,
-    }
-
-    if let Some(list) = json.get(key).and_then(|v| Some(StringList::deserialize(v).ok()?.list)) {
-        Ok(list)
-    } else {
-        bail!("failed to extract list from value {json:?}")
-    }
+    Ok(json
+        .get(key)
+        .map(|v| {
+            v.as_array()
+                .map(|v| {
+                    v.iter()
+                        .map(|v| v.as_str().unwrap_or_default().to_string())
+                        .collect_vec()
+                })
+                .unwrap_or_default()
+        })
+        .unwrap_or_default())
 }
 
 pub fn len<T>(v: &Vec<T>) -> ::askama::Result<usize> {

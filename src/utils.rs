@@ -22,6 +22,7 @@ use sqlx::query_as;
 use sqlx::FromRow;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tracing::error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type Ext = Extension<Arc<Db>>;
@@ -111,7 +112,10 @@ pub fn into_response<T: Template>(t: &T, mine: Option<&'static str>) -> Response
 
             (headers, body).into_response()
         }
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(e) => {
+            error!("{:?}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
     }
 }
 
