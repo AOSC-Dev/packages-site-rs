@@ -128,7 +128,11 @@ pub fn render<T: Template + Serialize, V: Template>(ctx: T, ctx_tsv: Option<V>, 
                 Error::NotSupported("cannot render current page into tsv format".to_string()).into_response()
             }
         }
-        Some("json") => build_resp(mime_guess::mime::JSON.as_ref(), serde_json::to_string(&ctx)?).into_response(),
+        Some("json") => build_resp(
+            mime_guess::mime::APPLICATION_JSON.as_ref(),
+            serde_json::to_string(&ctx)?,
+        )
+        .into_response(),
         _ => into_response(&ctx, None),
     })
 }

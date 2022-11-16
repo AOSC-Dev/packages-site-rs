@@ -125,7 +125,7 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
 
     let json = serde_json::to_string(&res)?;
 
-    Ok(build_resp(mime::JSON.as_ref(), json))
+    Ok(build_resp(mime::APPLICATION_JSON.as_ref(), json))
 }
 
 typed_path!("/cleanmirror/*repo", CleanMirror, repo);
