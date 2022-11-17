@@ -57,7 +57,7 @@
 
   {% if [101, 102].contains(issue.errno) %}
   <p><b class="pkg-field">File</b>: {{ e.info[0].file.filename }}</p>
-  <p><b class="pkg-field">Commit</b>: <a href="https://github.com/AOSC-Dev/{{ e.info[0].detail|value_string(" tree")
+  <p><b class="pkg-field">Commit</b>: <a href="https://github.com/AOSC-Dev/{{ e.info[0].detail|value_string("tree")
       }}/commit/{{ e.info[0].detail|value_string("githash") }}">{{
       e.info[0].detail|value_string("githash") }}</a></p>
   <p><b class="pkg-field">Error</b>: </p>
@@ -88,7 +88,7 @@
 
   {% else if issue.errno == 311 %}
   <p><b class="pkg-field">Maintainer</b>: {{ e.info[0].detail|value_string("maintainer")|e }}</p>
-  <p><b class="pkg-field">Committer</b>: <a href="https://github.com/AOSC-Dev/{{ e.info[0].detail|value_string(" tree")
+  <p><b class="pkg-field">Committer</b>: <a href="https://github.com/AOSC-Dev/{{ e.info[0].detail|value_string("tree")
       }}/commit/{{ e.info[0].detail|value_string("githash") }}">{{ e.info[0].detail|value_string("committer")|d("(not
       found)", true)|e
       }}</a></p>
@@ -127,7 +127,7 @@
     </ul>
 
     {% else if issue.errno == 402 %}
-    <p><b class="pkg-field">Commit</b>: <a href="https://github.com/AOSC-Dev/{{ e.info[0].detail|value_string(" tree")
+    <p><b class="pkg-field">Commit</b>: <a href="https://github.com/AOSC-Dev/{{ e.info[0].detail|value_string("tree")
         }}/commit/{{ e.info[0].detail|value_string("githash") }}">{{
         e.info[0].detail|value_string("githash") }}</a></p>
     <p><b class="pkg-field">Path</b>: {{ e.info[0].file.filename }}</p>
