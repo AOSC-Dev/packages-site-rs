@@ -232,6 +232,12 @@ WHERE
         FROM
             packages
     )
+    AND name NOT IN (
+        SELECT
+            name || '-dbg' name
+        FROM
+            packages
+    )
 GROUP BY
     name
 ";
