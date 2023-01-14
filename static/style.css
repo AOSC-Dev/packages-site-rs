@@ -399,7 +399,7 @@ li {
 
 .dpkg-ver-old,
 .pkg-missing {
-  background-color: rgba(63, 218, 20, 0.12);
+  background-color: #ffbc78;
 }
 
 .dpkg-ver-same,
@@ -417,7 +417,7 @@ li {
 }
 
 .pkg-status-error {
-  background-color: rgba(128, 128, 128, .12);
+  background-color: #ff0000;
 }
 
 .legend {

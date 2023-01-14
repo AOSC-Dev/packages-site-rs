@@ -13,7 +13,7 @@ use std::sync::Arc;
 use structopt::StructOpt;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::Level;
+use tracing::{Level, info};
 use utils::fallback;
 use utils::Error;
 use views::*;
@@ -74,7 +74,11 @@ async fn main() -> Result<()> {
         )
         .layer(Extension(db));
 
-    axum::Server::bind(&config.global.listen.parse()?)
+    let url = &config.global.listen.parse()?;
+
+    info!("package-site is running at: {}", url);
+
+    axum::Server::bind(url)
         .serve(app.into_make_service())
         .await?;
 
