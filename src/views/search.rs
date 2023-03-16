@@ -54,15 +54,15 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     };
 
     if !query.get_noredir() {
-        let q = q.trim().to_lowercase().replace(' ', "-").replace('_', "-");
+        let q = q.trim().to_lowercase().replace([' ', '_'], "-");
         let mut row = sqlx::query("SELECT 1 FROM packages WHERE name = ?")
-            .bind(&&q)
+            .bind(&q)
             .fetch_optional(&db.abbs)
             .await?;
 
         if row.is_none() {
             row = sqlx::query(SQL_GET_PACKAGE_INFO_GHOST)
-                .bind(&&q)
+                .bind(&q)
                 .fetch_optional(&db.abbs)
                 .await?;
         }

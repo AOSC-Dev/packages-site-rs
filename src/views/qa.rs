@@ -287,8 +287,8 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
     if let Some(repo) = &repo {
         let res =
             query("SELECT name FROM dpkg_repos WHERE name=? UNION ALL SELECT name FROM tree_branches WHERE name=?")
-                .bind(&repo)
-                .bind(&repo)
+                .bind(repo)
+                .bind(repo)
                 .fetch_optional(&db.abbs)
                 .await?;
 
@@ -305,7 +305,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
         .to_string();
 
     let (ref pkgs, page): (Vec<Package>, _) = query_as(SQL_ISSUES_CODE)
-        .bind(&code)
+        .bind(code)
         .bind(&repo)
         .fetch_page(&db.pg, q.get_page())
         .await?;
