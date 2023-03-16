@@ -9,10 +9,11 @@ use anyhow::Result;
 use axum::{Extension, Router};
 use axum_extra::routing::RouterExt;
 use config::Config;
+use tower_http::services::ServeFile;
 use std::sync::Arc;
 use structopt::StructOpt;
 use tower_http::trace::DefaultOnResponse;
-use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
 use utils::fallback;
 use views::*;
@@ -61,7 +62,7 @@ async fn main() -> Result<()> {
         .typed_get(cleanmirror)
         .typed_get(revdep)
         .typed_get(license)
-        .nest_service("/data", ServeDir::new(&config.global.data))
+        .nest_service("/data", ServeFile::new(config.db.abbs))
         .fallback(fallback)
         .layer(
             TraceLayer::new_for_http()
