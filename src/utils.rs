@@ -4,10 +4,10 @@ use crate::sql::SQL_GET_TREES;
 use anyhow::Context;
 use askama::Template;
 use axum::async_trait;
-use axum::extract::FromRequest;
-use axum::extract::RequestParts;
+use axum::extract::FromRequestParts;
 use axum::http;
 use axum::http::header;
+use axum::http::request::Parts;
 use axum::http::HeaderValue;
 use axum::http::StatusCode;
 use axum::http::Uri;
@@ -191,18 +191,18 @@ pub struct QueryExtractor {
 }
 
 #[async_trait]
-impl<B> FromRequest<B> for QueryExtractor
+impl<S> FromRequestParts<S> for QueryExtractor
 where
-    B: Send,
+    S: Send + Sync,
 {
     type Rejection = Error;
 
-    async fn from_request(req: &mut RequestParts<B>) -> std::result::Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> std::result::Result<Self, Self::Rejection> {
         use axum::extract::Query;
-        let mut res = Query::<QueryExtractor>::from_request(req).await?.0;
+        let mut res = Query::<QueryExtractor>::from_request_parts(parts, state).await?.0;
 
-        if req
-            .headers()
+        if parts
+            .headers
             .get("X-Requested-With")
             .and_then(|h| h.eq("XMLHttpRequest").then_some(()))
             .is_some()

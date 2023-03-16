@@ -8,10 +8,10 @@ authors = ["zrah <zrah@protonmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.5", features = ["headers"] }
-axum-macros = "0.2"
-axum-extra = { version = "0.3", features = ["typed-routing"] }
-tower-http = { version = "0.3", features = ["trace", "fs"] }
+axum = { version = "0.6", features = ["headers"] }
+axum-macros = "0.3"
+axum-extra = { version = "0.7", features = ["typed-routing"] }
+tower-http = { version = "0.4", features = ["trace", "fs"] }
 tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -21,9 +21,9 @@ sqlx = { version = "0.6", features = [
     "runtime-tokio-rustls",
 ] }
 serde = { version = "^1", features = ["derive"] }
-toml = "0.5"
+toml = "0.7"
 anyhow = "^1"
-askama = "0.11"
+askama = "0.12"
 thiserror = "^1"
 time = { version = "0.3", default-features = false, features = ["formatting"] }
 textwrap = "0.16"
@@ -33,7 +33,7 @@ deb-version = "0.1"
 serde_json = "^1"
 indexmap = { version = "^1", features = ["serde"] }
 html-escape = "0.2"
-abbs-meta-tree = { git = "https://github.com/7rah/abbs-meta-rs" }
+abbs-meta-tree = { git = "https://github.com/AoSC-Dev/abbs-meta-rs" }
 size = "0.4"
 itertools = "0.10"
 hex = "0.4"
