@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
       var re = new RegExp("(" + search.split(' ').join('|') + ")", "gi");
       var s = '<a class="autocomplete-suggestion" data-val="' + item + '" href="/packages/' + item + '">' + item.replace(re, "<b>$1</b>") + '</a>';
       if (item === search) {
-        s += '<a class="autocomplete-suggestion autocomplete-noredir" data-val="' + item + '" href="/search/?q=' + item + '&noredir=1">Search for "' + item + '"</a>';
+        s += '<a class="autocomplete-suggestion autocomplete-noredir" data-val="' + item + '" href="/search?q=' + item + '&noredir=1">Search for "' + item + '"</a>';
       }
       return s;
     },
