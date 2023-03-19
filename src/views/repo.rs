@@ -209,7 +209,7 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
     get_repo(repo, &db).await?;
 
     let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_GHOST)
-        .bind(&repo)
+        .bind(repo)
         .fetch_page(&db.abbs, q.get_page())
         .await?;
 

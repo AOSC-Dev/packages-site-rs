@@ -15,7 +15,6 @@ pub struct Db {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Global {
-    pub data: String,
     pub listen: String,
     pub log: String,
     pub sqlx_log: String,

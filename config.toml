@@ -1,6 +1,5 @@
 [global]
 listen = "0.0.0.0:3000"
-data = "data" # path to data directory
 log = "info" # general logging level
 sqlx_log = "info" # sqlx logging level. Set to `info` or `debug` to get SQL query which has executed
 

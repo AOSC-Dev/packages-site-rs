@@ -6,16 +6,16 @@ mod utils;
 mod views;
 
 use anyhow::Result;
-use axum::{handler::Handler, routing::get_service, Extension, Router};
+use axum::{Extension, Router};
 use axum_extra::routing::RouterExt;
 use config::Config;
+use tower_http::services::ServeFile;
 use std::sync::Arc;
 use structopt::StructOpt;
 use tower_http::trace::DefaultOnResponse;
-use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::{Level, info};
+use tower_http::trace::TraceLayer;
+use tracing::{info, Level};
 use utils::fallback;
-use utils::Error;
 use views::*;
 
 #[derive(StructOpt, Debug)]
@@ -62,11 +62,8 @@ async fn main() -> Result<()> {
         .typed_get(cleanmirror)
         .typed_get(revdep)
         .typed_get(license)
-        .nest(
-            "/data",
-            get_service(ServeDir::new(&config.global.data)).handle_error(|err| async { Error::from(err) }),
-        )
-        .fallback(fallback.into_service())
+        .nest_service("/data", ServeFile::new(config.db.abbs))
+        .fallback(fallback)
         .layer(
             TraceLayer::new_for_http()
                 .on_request(())
@@ -76,11 +73,9 @@ async fn main() -> Result<()> {
 
     let url = &config.global.listen.parse()?;
 
-    info!("package-site is running at: {}", url);
+    info!("package-site is running at: http://{}", url);
 
-    axum::Server::bind(url)
-        .serve(app.into_make_service())
-        .await?;
+    axum::Server::bind(url).serve(app.into_make_service()).await?;
 
     Ok(())
 }

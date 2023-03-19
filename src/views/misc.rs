@@ -1,13 +1,10 @@
 use crate::sql::*;
 use crate::utils::*;
-use anyhow::Context;
 use askama::Template;
 use axum::body::{boxed, Full};
-use axum::headers::{ETag, IfNoneMatch};
-use axum::http::{header, StatusCode};
+use axum::http::header;
 use axum::response::IntoResponse;
 use axum::response::Response;
-use axum::TypedHeader;
 use itertools::Itertools;
 use mime_guess::mime;
 use serde::Serialize;
@@ -15,31 +12,17 @@ use sqlx::{query_as, FromRow};
 use std::collections::{HashMap, HashSet};
 
 typed_path!("/static/*path", StaticFiles, path);
-pub async fn static_files(
-    StaticFiles { path }: StaticFiles,
-    if_none_match: Option<TypedHeader<IfNoneMatch>>,
-) -> Result<impl IntoResponse> {
+pub async fn static_files(StaticFiles { path }: StaticFiles) -> Result<impl IntoResponse> {
     #[derive(rust_embed::RustEmbed)]
     #[folder = "static"]
     struct Asset;
 
     match Asset::get(path.as_str().trim_start_matches('/')) {
         Some(content) => {
-            let hash = hex::encode(content.metadata.sha256_hash());
-            let etag = format!(r#"{:?}"#, hash)
-                .parse::<ETag>()
-                .with_context(|| "failed to convert hash to etag")?;
-            if let Some(if_none_match) = if_none_match {
-                if if_none_match.precondition_passes(&etag) {
-                    return Ok(StatusCode::NOT_MODIFIED.into_response());
-                }
-            }
-
             let body = boxed(Full::from(content.data));
             let mime = mime_guess::from_path(path).first_or_octet_stream();
             Ok(Response::builder()
                 .header(header::CONTENT_TYPE, mime.as_ref())
-                .header(header::ETAG, format!("\"{hash}\""))
                 .body(body)?)
         }
         None => not_found!("/static{path}"),
@@ -85,7 +68,10 @@ pub async fn pkgtrie(_: PkgTrie, db: Ext) -> Result<impl IntoResponse> {
     pkgs.iter().for_each(|pkg| trie.insert(&pkg.name));
     let packagetrie = trie.walk_tree().replace("{$:0}", "0");
 
-    build_resp(mime::APPLICATION_JAVASCRIPT.as_ref(), format!("var pkgTrie = {packagetrie};"))
+    build_resp(
+        mime::APPLICATION_JAVASCRIPT.as_ref(),
+        format!("var pkgTrie = {packagetrie};"),
+    )
 }
 
 typed_path!("/list.json", PkgList);
