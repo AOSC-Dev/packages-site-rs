@@ -42,7 +42,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
         packages: &'a Vec<PackageTemplate>,
     }
 
-    let repo = strip_prefix(&repo)?;
+    let repo = strip_prefix(&repo);
     get_repo(repo, &db).await?;
 
     let (packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_REPO)
@@ -109,7 +109,7 @@ pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<imp
         packages: &'a Vec<Package>,
     }
 
-    let repo = strip_prefix(&repo)?;
+    let repo = strip_prefix(&repo);
     let architecture = get_repo(repo, &db).await?.architecture;
 
     let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_LAGGING)
@@ -158,7 +158,7 @@ pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<imp
         packages: &'a Vec<Package>,
     }
 
-    let repo = strip_prefix(&repo)?;
+    let repo = strip_prefix(&repo);
     let repo = get_repo(repo, &db).await?;
 
     let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_MISSING)
@@ -205,7 +205,7 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
         packages: &'a Vec<Package>,
     }
 
-    let repo = strip_prefix(&repo)?;
+    let repo = strip_prefix(&repo);
     get_repo(repo, &db).await?;
 
     let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_GHOST)
