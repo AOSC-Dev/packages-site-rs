@@ -9,14 +9,18 @@ use anyhow::Result;
 use axum::{Extension, Router};
 use axum_extra::routing::RouterExt;
 use config::Config;
-use tower_http::services::ServeFile;
+use hyper::Server;
+use hyperlocal::UnixServerExt;
 use std::sync::Arc;
 use structopt::StructOpt;
+use tower_http::services::ServeFile;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
 use utils::fallback;
 use views::*;
+
+const UNIX_SOCKET_PREFIX: &str = "unix:";
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "packages-site")]
@@ -71,11 +75,17 @@ async fn main() -> Result<()> {
         )
         .layer(Extension(db));
 
-    let url = &config.global.listen.parse()?;
+    let service = app.into_make_service();
 
-    info!("package-site is running at: http://{}", url);
-
-    axum::Server::bind(url).serve(app.into_make_service()).await?;
+    let listen = &config.global.listen;
+    if let Some(socket) = listen.strip_prefix(UNIX_SOCKET_PREFIX) {
+        info!("package-site is listening on unix socket: {}", socket);
+        Server::bind_unix(socket)?.serve(service).await?;
+    } else {
+        let addr = listen.parse()?;
+        info!("package-site is listening on: {}", addr);
+        Server::bind(&addr).serve(service).await?;
+    }
 
     Ok(())
 }
