@@ -120,7 +120,7 @@ pub async fn cleanmirror(CleanMirror { repo }: CleanMirror, q: Query, db: Ext) -
         .get_reason()
         .as_ref()
         .map(|r| r.split(',').map(|x| x.to_string()).collect());
-    let repo = strip_prefix(&repo)?;
+    let repo = strip_prefix(&repo);
 
     #[derive(Debug, FromRow, Serialize)]
     struct Deb {

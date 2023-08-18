@@ -279,7 +279,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
     }
 
     let repo = if let Some(repo) = repo {
-        Some(strip_prefix(&repo)?.to_string())
+        Some(strip_prefix(&repo).to_string())
     } else {
         None
     };

@@ -1,7 +1,6 @@
 use crate::db::Db;
 use crate::sql::SQL_GET_REPO_COUNT;
 use crate::sql::SQL_GET_TREES;
-use anyhow::Context;
 use askama::Template;
 use axum::async_trait;
 use axum::extract::FromRequestParts;
@@ -248,9 +247,8 @@ impl QueryExtractor {
     }
 }
 
-pub fn strip_prefix(s: &str) -> Result<&str> {
-    Ok(s.strip_prefix('/')
-        .with_context(|| format!("falied to strip prefix \"{}\"", s))?)
+pub fn strip_prefix(s: &str) -> &str {
+    s.strip_prefix('/').unwrap_or(s)
 }
 
 pub async fn get_repo(repo: &str, db: &Ext) -> Result<Repo> {
