@@ -84,8 +84,8 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         path: String,
         tree: String,
         branch: String,
-        col: Option<u32>,
-        line: Option<u32>,
+        col: Option<i32>,
+        line: Option<i32>,
     }
 
     #[derive(FromRow)]

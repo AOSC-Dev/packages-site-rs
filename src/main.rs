@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
         .typed_get(cleanmirror)
         .typed_get(revdep)
         .typed_get(license)
-        .nest_service("/data", ServeFile::new(config.db.abbs))
+        .nest_service("/data", ServeFile::new(config.db.pg_conn_abbs))
         .fallback(fallback)
         .layer(
             TraceLayer::new_for_http()

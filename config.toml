@@ -5,4 +5,5 @@ sqlx_log = "info" # sqlx logging level. Set to `info` or `debug` to get SQL quer
 
 [db]
 abbs = "data/abbs.db" # path to abbs.db. Generally, it should be placed in `data` directory
-pg_conn = "postgresql://postgres@localhost/packages" # postgres connection, provided by p-vender-rs
+pg_conn_pv = "postgresql://postgres@localhost/packages" # postgres connection, provided by p-vender-rs
+pg_conn_abbs = "postgresql://postgres@localhost/abbs" # postgres connection, provided by abbs-meta
