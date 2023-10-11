@@ -6,8 +6,6 @@ SELECT
     branch
 FROM
     package_testing
-WHERE
-    package = ?
 ";
 
 pub const SQL_GET_PACKAGE_ERRORS: &str = "
@@ -20,8 +18,6 @@ SELECT
     col
 FROM
     package_errors
-WHERE
-    package = ?
 ";
 
 pub const SQL_GET_PACKAGE_CHANGELOG: &str = "
@@ -39,8 +35,6 @@ SELECT
     timestamp
 FROM
     package_changes
-WHERE
-    package = ?
 ORDER BY
     timestamp DESC
 ";
