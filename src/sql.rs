@@ -39,6 +39,7 @@ ORDER BY
     timestamp DESC
 ";
 
+// TODO
 pub const SQL_GET_REPO_COUNT: &str = "
 SELECT
     drs.repo name,
@@ -76,11 +77,11 @@ ORDER BY
 
 pub const SQL_GET_TREES: &str = "
 SELECT
-    tree name,
+    tree AS name,
     category,
     url,
-    max(date) date,
-    count(name) pkgcount
+    max(date) AS date,
+    count(name) AS pkgcount
 FROM
     (
         SELECT
@@ -88,17 +89,20 @@ FROM
             p.tree,
             t.category,
             t.url,
-            p.commit_time date
+            p.commit_time AS date
         FROM
-            v_packages p
-            INNER JOIN trees t ON t.name = p.tree
+            v_packages AS p
+            INNER JOIN trees AS t ON t.name = p.tree
     ) q1
 GROUP BY
-    tree
+    tree,
+    category,
+    url
 ORDER BY
     pkgcount DESC
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_LAGGING: &str = "
 SELECT
     p.name name,
@@ -143,6 +147,7 @@ ORDER BY
     name
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_LIST: &str = "
 SELECT
     p.name,
@@ -180,6 +185,7 @@ ORDER BY
     name
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_MISSING: &str = "
 SELECT
     v_packages.name name,
@@ -212,6 +218,7 @@ ORDER BY
     name
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_GHOST: &str = "
 SELECT
     package name,
@@ -236,6 +243,7 @@ GROUP BY
     name
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_INFO_GHOST: &str = "
 SELECT
     DISTINCT package name,
@@ -264,6 +272,7 @@ WHERE
     package = ?
 ";
 
+// TODO
 pub const SQL_SEARCH_PACKAGES_DESC: &str = "
 SELECT
     q.name,
@@ -314,6 +323,7 @@ ORDER BY
     q.name
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_NEW_LIST: &str = "
 SELECT
     name,
@@ -361,6 +371,7 @@ LIMIT
     ?
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_NEW: &str = "
 SELECT
     name,
@@ -407,6 +418,7 @@ LIMIT
     10
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_REPO: &str = "
 SELECT
     p.name name,
@@ -461,12 +473,12 @@ SELECT
     full_version,
     commit_time,
     committer,
-    dep.dependency dependency,
-    (spabhost.value IS 'noarch') noarch,
-    spfailarch.value fail_arch,
-    spsrc.key srctype,
-    spsrc.value srcurl,
-    v_packages.spec_path spec_path,
+    dep.dependency AS dependency,
+    (spabhost.value LIKE 'noarch') AS noarch,
+    spfailarch.value AS fail_arch,
+    spsrc.key ASsrctype,
+    spsrc.value AS srcurl,
+    v_packages.spec_path AS spec_path,
     EXISTS(
         SELECT
             1
@@ -481,7 +493,7 @@ FROM
     LEFT JOIN (
         SELECT
             package,
-            group_concat(
+            array_agg(
                 dependency || '|' || coalesce(relop, '') || coalesce(version, '') || '|' || relationship || '|' || architecture
             ) dependency
         FROM
@@ -494,11 +506,10 @@ FROM
     LEFT JOIN package_spec spfailarch ON spfailarch.package = v_packages.name
     AND spfailarch.key = 'FAIL_ARCH'
     LEFT JOIN package_spec spsrc ON spsrc.package = v_packages.name
-    AND spsrc.key IN ('SRCTBL', 'GITSRC', 'SVNSRC', 'BZRSRC', 'SRCS')
-WHERE
-    name = ?
+    AND spsrc.key IN ('SRCTBL', 'GITSRC', 'SVNSRC', 'BZRSRC', 'SRCS');
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_DPKG: &str = "
 SELECT
     version,
@@ -525,12 +536,12 @@ SELECT
     (
         (
             CASE
-                WHEN ifnull(epoch, '') = '' THEN ''
+                WHEN coalesce(epoch, '') = '' THEN ''
                 ELSE epoch || ':'
             END
         ) || version || (
             CASE
-                WHEN ifnull(release, '') IN ('', '0') THEN ''
+                WHEN coalesce(release, '') IN ('', '0') THEN ''
                 ELSE '-' || release
             END
         )
@@ -540,12 +551,11 @@ FROM
     INNER JOIN packages p ON p.name = v.package
     INNER JOIN tree_branches b ON b.tree = p.tree
     AND b.branch = v.branch
-WHERE
-    v.package = ?
 ORDER BY
     b.priority DESC
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_DEB_LOCAL: &str = "
 SELECT
     package,
@@ -565,6 +575,7 @@ WHERE
     AND repo = ?
 ";
 
+// TODO
 pub const SQL_GET_PACKAGE_DEB_FILES: &str = r#"
 SELECT
     (
@@ -591,6 +602,7 @@ ORDER BY
     filename
 "#;
 
+// TODO
 pub const SQL_GET_PACKAGE_SODEP: &str = "
 SELECT
     depends,
@@ -607,6 +619,7 @@ ORDER BY
     ver
 ";
 
+// TODO
 pub const SQL_ISSUES_STATS: &str = "
 SELECT
     q1.repo,
@@ -652,6 +665,7 @@ FROM
     q1.repo
 ";
 
+// TODO
 pub const SQL_ISSUES_RECENT: &str = "
 SELECT
     package,
@@ -674,6 +688,7 @@ LIMIT
     10
 ";
 
+// TODO
 pub const SQL_ISSUES_CODE: &str = r#"
 SELECT
     package "name",
@@ -710,6 +725,7 @@ ORDER BY
     package
 "#;
 
+// TODO
 pub const SQL_ISSUES_PACKAGE: &str = "
 SELECT
     errno,
@@ -764,6 +780,7 @@ ORDER BY
     filename
 ";
 
+// TODO
 pub const SQL_GET_DEB_LIST_HASARCH: &str = "
 SELECT
     dp.filename,
@@ -835,6 +852,7 @@ ORDER BY
     filename
 ";
 
+// TODO
 pub const SQL_GET_DEB_LIST_NOARCH: &str = "
 SELECT
     dp.filename,
@@ -909,16 +927,19 @@ ORDER BY
 pub const SQL_GET_PACKAGE_REV_REL: &str = "
 SELECT
     package,
-    coalesce(relop, '') || coalesce(version, '') version,
+    array_agg(coalesce(relop, '') || coalesce(version, '')) AS version,
     relationship,
     architecture
 FROM
     package_dependencies
 WHERE
-    dependency = ?
-    AND relationship IN ('PKGDEP', 'BUILDDEP', 'PKGRECOM', 'PKGSUG')
+    relationship IN ('PKGDEP', 'BUILDDEP', 'PKGRECOM', 'PKGSUG')
+GROUP BY
+    package,
+    relationship,
+    architecture
 ORDER BY
     relationship,
     package,
-    architecture
+    architecture;
 ";
