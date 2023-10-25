@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS dpkg_repos (
+    name TEXT PRIMARY KEY,  # key: bsp-sunxi-armel/testing
+    realname TEXT,    # group key: amd64, bsp-sunxi-armel
+    source_tree TEXT,  # abbs tree
+    category TEXT,  # base, bsp, overlay
+    testing INTEGER,    # 0, 1, 2
+    suite TEXT,         # stable, testing, explosive
+    component TEXT,     # main, bsp-sunxi, opt-avx2
+    architecture TEXT,  # amd64, all
+    origin TEXT,
+    label TEXT,
+    codename TEXT,
+    date INTEGER,
+    valid_until INTEGER,
+    description TEXT
+)

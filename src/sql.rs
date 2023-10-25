@@ -6,6 +6,8 @@ SELECT
     branch
 FROM
     package_testing
+WHERE
+    package = %s
 ";
 
 pub const SQL_GET_PACKAGE_ERRORS: &str = "
@@ -18,6 +20,8 @@ SELECT
     col
 FROM
     package_errors
+WHERE
+    package = %s
 ";
 
 pub const SQL_GET_PACKAGE_CHANGELOG: &str = "
@@ -35,6 +39,8 @@ SELECT
     timestamp
 FROM
     package_changes
+WHERE
+    package = %s
 ORDER BY
     timestamp DESC
 ";
@@ -42,18 +48,18 @@ ORDER BY
 // TODO
 pub const SQL_GET_REPO_COUNT: &str = "
 SELECT
-    drs.repo name,
-    dr.realname realname,
+    drs.repo AS name,
+    dr.realname AS realname,
     dr.architecture,
-    dr.suite branch,
-    dr.date date,
-    dr.testing testing,
-    dr.category category,
-    (drm.name IS NULL) testingonly,
-    coalesce(drs.packagecnt, 0) pkgcount,
-    coalesce(drs.ghostcnt, 0) ghost,
-    coalesce(drs.laggingcnt, 0) lagging,
-    coalesce(drs.missingcnt, 0) missing
+    dr.suite AS branch,
+    dr.date AS date,
+    dr.testing AS testing,
+    dr.category AS category,
+    (drm.name IS NULL) AS testingonly,
+    coalesce(drs.packagecnt, 0) AS pkgcount,
+    coalesce(drs.ghostcnt, 0) AS ghost,
+    coalesce(drs.laggingcnt, 0) AS lagging,
+    coalesce(drs.missingcnt, 0) AS missing
 FROM
     dpkg_repo_stats drs
     LEFT JOIN dpkg_repos dr ON dr.name = drs.repo
@@ -103,6 +109,7 @@ ORDER BY
 ";
 
 // TODO
+// FIXME: MAX 需要 vercomp
 pub const SQL_GET_PACKAGE_LAGGING: &str = "
 SELECT
     p.name name,
@@ -141,7 +148,7 @@ GROUP BY
     name
 HAVING
     (
-        max(dpkg_version COLLATE vercomp) < full_version COLLATE vercomp
+        max(dpkg_version) < full_version
     )
 ORDER BY
     name
@@ -168,9 +175,9 @@ SELECT
     ifnull(
         CASE
             WHEN dpkg.dpkg_version IS NOT null THEN (
-                dpkg.dpkg_version > p.full_version COLLATE vercomp
+                dpkg.dpkg_version > p.full_version 
             ) - (
-                dpkg.dpkg_version < p.full_version COLLATE vercomp
+                dpkg.dpkg_version < p.full_version
             )
             ELSE -1
         END,
@@ -333,7 +340,7 @@ SELECT
     commit_time,
     ifnull(
         CASE
-            WHEN dpkg_version IS NOT null THEN (dpkg_version > full_version COLLATE vercomp) - (dpkg_version < full_version COLLATE vercomp)
+            WHEN dpkg_version IS NOT null THEN (dpkg_version > full_version) - (dpkg_version < full_version)
             ELSE -1
         END,
         -2
@@ -380,7 +387,7 @@ SELECT
     commit_time,
     ifnull(
         CASE
-            WHEN dpkg.dpkg_version IS NOT null THEN (dpkg.dpkg_version > full_version COLLATE vercomp) - (dpkg.dpkg_version < full_version COLLATE vercomp)
+            WHEN dpkg.dpkg_version IS NOT null THEN (dpkg.dpkg_version > full_version) - (dpkg.dpkg_version < full_version)
             ELSE -1
         END,
         -2
@@ -526,7 +533,7 @@ WHERE
     package = ?
 ORDER BY
     dr.realname ASC,
-    version COLLATE vercomp DESC,
+    version DESC,
     testing DESC
 ";
 
@@ -805,7 +812,7 @@ FROM
     LEFT JOIN (
         SELECT
             package,
-            max(version COLLATE vercomp) version
+            max(version) version
         FROM
             dpkg_packages
         WHERE
@@ -819,7 +826,7 @@ FROM
     LEFT JOIN (
         SELECT
             dp.package,
-            max(dp.version COLLATE vercomp) version
+            max(dp.version) version
         FROM
             dpkg_packages dp
             INNER JOIN dpkg_repos dr ON dr.name = dp.repo
@@ -877,7 +884,7 @@ FROM
     LEFT JOIN (
         SELECT
             package,
-            max(version COLLATE vercomp) version
+            max(version) version
         FROM
             dpkg_packages
         WHERE
@@ -891,7 +898,7 @@ FROM
     LEFT JOIN (
         SELECT
             dp.package,
-            max(dp.version COLLATE vercomp) version
+            max(dp.version version
         FROM
             dpkg_packages dp
             INNER JOIN dpkg_repos dr ON dr.name = dp.repo
@@ -933,7 +940,8 @@ SELECT
 FROM
     package_dependencies
 WHERE
-    relationship IN ('PKGDEP', 'BUILDDEP', 'PKGRECOM', 'PKGSUG')
+    dependency = %s
+    AND relationship IN ('PKGDEP', 'BUILDDEP', 'PKGRECOM', 'PKGSUG')
 GROUP BY
     package,
     relationship,
