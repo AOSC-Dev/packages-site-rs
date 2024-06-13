@@ -88,6 +88,8 @@ impl IntoResponse for Error {
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
+        error!("Rendering error page with error {:?}", self);
+
         (status_code, into_response(&ctx, None)).into_response()
     }
 }
