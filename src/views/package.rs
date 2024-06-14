@@ -589,7 +589,7 @@ pub async fn files(
 
     #[derive(Debug, FromRow)]
     struct DebTime {
-        debtime: time::OffsetDateTime,
+        debtime: i32,
     }
 
     #[derive(Debug, FromRow)]
@@ -616,7 +616,7 @@ pub async fn files(
         files: &'a Vec<File>,
         sodepends: Vec<String>,
         soprovides: Vec<String>,
-        pkg_debtime: time::OffsetDateTime,
+        pkg_debtime: i32,
         pkg: Package,
     }
 
@@ -642,7 +642,7 @@ pub async fn files(
         .bind(&pkg.filename)
         .fetch_optional(&db.pv)
         .await?
-        .map_or(time::OffsetDateTime::UNIX_EPOCH, |d: DebTime| d.debtime);
+        .map_or(0, |d: DebTime| d.debtime);
 
     let files: &Vec<File> = &query_as(SQL_GET_PACKAGE_DEB_FILES)
         .bind(&name)
