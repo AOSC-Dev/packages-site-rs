@@ -106,7 +106,7 @@ ORDER BY
 ";
 
 pub const SQL_GET_PACKAGE_LAGGING: &str = "
-SELECT
+SELECT * FROM (SELECT
     p.name AS name,
     dpkg.dpkg_version dpkg_version,
     (
@@ -136,13 +136,9 @@ WHERE
         dpkg.architecture = 'noarch'
         OR $2 != 'noarch'
     )
-    AND (coalesce(spabhost.value, '') = 'noarch') = (dpkg.architecture = 'noarch')
-GROUP BY
-    name
-HAVING
-    (
-        comparable_dpkgver(max_dpkgver(dpkg_version)) < comparable_dpkgver(full_version)
-    )
+    AND (coalesce(spabhost.value, '') = 'noarch') = (dpkg.architecture = 'noarch')) AS temp
+WHERE
+    comparable_dpkgver(dpkg_version) < comparable_dpkgver(full_version)
 ORDER BY
     name
 ";
@@ -217,27 +213,25 @@ ORDER BY
 ";
 
 pub const SQL_GET_PACKAGE_GHOST: &str = "
-SELECT
+SELECT DISTINCT ON (package)
     package AS name,
     dpkg_version
 FROM
     v_dpkg_packages_new
 WHERE
     repo = $1
-    AND name NOT IN (
+    AND package NOT IN (
         SELECT
             name
         FROM
             packages
     )
-    AND name NOT IN (
+    AND package NOT IN (
         SELECT
-            name || '-dbg' name
+            name || '-dbg' AS name
         FROM
             packages
-    )
-GROUP BY
-    name
+)
 ";
 
 pub const SQL_GET_PACKAGE_INFO_GHOST: &str = "
@@ -368,7 +362,8 @@ LIMIT
 ";
 
 pub const SQL_GET_PACKAGE_NEW: &str = "
-SELECT DISTINCT ON (commit_time, name)
+SELECT
+    DISTINCT ON (commit_time, name)
     name,
     description,
     full_version,
