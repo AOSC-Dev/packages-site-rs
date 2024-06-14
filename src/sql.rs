@@ -7,7 +7,7 @@ SELECT
 FROM
     package_testing
 WHERE
-    package = ?
+    package = $1
 ";
 
 pub const SQL_GET_PACKAGE_ERRORS: &str = "
@@ -21,7 +21,7 @@ SELECT
 FROM
     package_errors
 WHERE
-    package = ?
+    package = $1
 ";
 
 pub const SQL_GET_PACKAGE_CHANGELOG: &str = "
@@ -40,7 +40,7 @@ SELECT
 FROM
     package_changes
 WHERE
-    package = ?
+    package = $1
 ORDER BY
     timestamp DESC
 ";
@@ -130,14 +130,14 @@ FROM
     LEFT JOIN package_versions pv ON pv.package = p.name
     AND pv.branch = dpkg.branch
 WHERE
-    dpkg.repo = ?
+    dpkg.repo = $1
     AND dpkg_version IS NOT null
     AND (
-        dpkg.architecture IS 'noarch'
-        OR ? != 'noarch'
+        dpkg.architecture = 'noarch'
+        OR $2 != 'noarch'
     )
     AND (
-        (spabhost.value IS 'noarch') = (dpkg.architecture IS 'noarch')
+        (spabhost.value = 'noarch') = (dpkg.architecture IS 'noarch')
     )
 GROUP BY
     name
@@ -198,11 +198,11 @@ FROM
     LEFT JOIN package_spec spabhost ON spabhost.package = v_packages.name
     AND spabhost.key = 'ABHOST'
     LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = v_packages.name
-    AND dpkg.reponame = ?
+    AND dpkg.reponame = $1
 WHERE
     full_version IS NOT null
     AND dpkg_version IS null
-    AND ((spabhost.value IS 'noarch') = (? IS 'noarch'))
+    AND ((spabhost.value = 'noarch') = ($2 = 'noarch'))
     AND (
         EXISTS(
             SELECT
@@ -210,7 +210,7 @@ WHERE
             FROM
                 dpkg_repos
             WHERE
-                realname = ?
+                realname = $3
                 AND category = 'bsp'
         ) = (v_packages.tree_category = 'bsp')
     )
@@ -225,7 +225,7 @@ SELECT
 FROM
     v_dpkg_packages_new
 WHERE
-    repo = ?
+    repo = $1
     AND name NOT IN (
         SELECT
             name
@@ -267,7 +267,7 @@ SELECT
 FROM
     dpkg_packages
 WHERE
-    package = ?
+    package = $1
 ";
 
 pub const SQL_SEARCH_PACKAGES_DESC: &str = "
@@ -284,8 +284,8 @@ FROM
             highlight(fts_packages, 1, '<b>', '</b>') desc_highlight,
             (
                 CASE
-                    WHEN vp.name = ? THEN 1
-                    WHEN instr(vp.name, ?) = 0 THEN 3
+                    WHEN vp.name = $1 THEN 1
+                    WHEN instr(vp.name, $2) = 0 THEN 3
                     ELSE 2
                 END
             ) matchcls,
@@ -294,7 +294,7 @@ FROM
             packages vp
             INNER JOIN fts_packages fp ON fp.name = vp.name
         WHERE
-            fts_packages MATCH ?
+            fts_packages MATCH $3
         UNION
         ALL
         SELECT
@@ -306,10 +306,10 @@ FROM
         FROM
             v_packages vp
             LEFT JOIN fts_packages fp ON fp.name = vp.name
-            AND fts_packages MATCH ?
+            AND fts_packages MATCH $4
         WHERE
-            vp.name LIKE ('%' || ? || '%')
-            AND vp.name != ?
+            vp.name LIKE ('%' || $5 || '%')
+            AND vp.name != $6
             AND fp.name IS NULL
     ) q
     INNER JOIN v_packages vp ON vp.name = q.name
@@ -368,7 +368,7 @@ ORDER BY
     commit_time DESC,
     name ASC
 LIMIT
-    ?
+    $1
 ";
 
 pub const SQL_GET_PACKAGE_NEW: &str = "
@@ -452,9 +452,9 @@ FROM
     AND spabhost.key = 'ABHOST'
     LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = p.name
 WHERE
-    dpkg.repo = ?
+    dpkg.repo = $1
     AND (
-        (spabhost.value IS 'noarch') = (dpkg.architecture IS 'noarch')
+        (spabhost.value = 'noarch') = (dpkg.architecture = 'noarch')
     )
 ORDER BY
     p.name
@@ -476,8 +476,8 @@ SELECT
     commit_time,
     committer,
     dep.dependency dependency,
-    (spabhost.value IS 'noarch') noarch,
-    spfailarch.value fail_arch,
+    (coalesce(spabhost.value, '') = 'noarch') noarch,
+    coalesce(spfailarch.value, '') fail_arch,
     spsrc.key srctype,
     spsrc.value srcurl,
     v_packages.spec_path spec_path,
@@ -495,8 +495,9 @@ FROM
     LEFT JOIN (
         SELECT
             package,
-            group_concat(
-                dependency || '|' || coalesce(relop, '') || coalesce(version, '') || '|' || relationship || '|' || architecture
+            string_agg(
+                dependency || '|' || coalesce(relop, '') || coalesce(version, '') || '|' || relationship || '|' || architecture,
+                ','
             ) dependency
         FROM
             package_dependencies
@@ -510,7 +511,7 @@ FROM
     LEFT JOIN package_spec spsrc ON spsrc.package = v_packages.name
     AND spsrc.key IN ('SRCTBL', 'GITSRC', 'SVNSRC', 'BZRSRC', 'SRCS')
 WHERE
-    name = ?
+    name = $1
 ";
 
 pub const SQL_GET_PACKAGE_DPKG: &str = "
@@ -526,7 +527,7 @@ FROM
     dpkg_packages dp
     LEFT JOIN dpkg_repos dr ON dr.name = dp.repo
 WHERE
-    package = ?
+    package = $1
 ORDER BY
     dr.realname ASC,
     comparable_dpkgver(version) DESC,
@@ -555,7 +556,7 @@ FROM
     INNER JOIN tree_branches b ON b.tree = p.tree
     AND b.branch = v.branch
 WHERE
-    v.package = ?
+    v.package = $1
 ORDER BY
     b.priority DESC
 ";
@@ -574,9 +575,9 @@ SELECT
 FROM
     dpkg_packages
 WHERE
-    package = ?
-    AND version = ?
-    AND repo = ?
+    package = $1
+    AND version = $2
+    AND repo = $3
 ";
 
 pub const SQL_GET_PACKAGE_DEB_FILES: &str = r#"
@@ -790,7 +791,7 @@ SELECT
             ELSE ''
         END || CASE
             WHEN (
-                spabhost.value IS 'noarch'
+                spabhost.value = 'noarch'
                 AND dpnoarch.package IS NULL
             ) THEN 'noarch'
             ELSE ''
@@ -806,7 +807,7 @@ FROM
         FROM
             dpkg_packages
         WHERE
-            repo = ?
+            repo = $1
         GROUP BY
             package
     ) dpnew USING (package, version)
@@ -831,11 +832,11 @@ WHERE
         dpnew.package IS NULL
         OR packages.name IS NULL
         OR (
-            spabhost.value IS 'noarch'
+            spabhost.value = 'noarch'
             AND dpnoarch.package IS NULL
         )
     )
-    AND dp.repo = ?
+    AND dp.repo = $2
 UNION
 ALL
 SELECT
@@ -844,7 +845,7 @@ SELECT
 FROM
     dpkg_package_duplicate
 WHERE
-    repo = ?
+    repo = $3
 ORDER BY
     filename
 ";
@@ -861,7 +862,7 @@ SELECT
             ELSE ''
         END || CASE
             WHEN (
-                spabhost.value IS NOT 'noarch'
+                spabhost.value != 'noarch'
                 AND dphasarch.package IS NULL
             ) THEN 'hasarch'
             ELSE ''
@@ -877,7 +878,7 @@ FROM
         FROM
             dpkg_packages
         WHERE
-            repo = ?
+            repo = $1
         GROUP BY
             package
     ) dpnew USING (package, version)
@@ -902,11 +903,11 @@ WHERE
         dpnew.package IS NULL
         OR packages.name IS NULL
         OR (
-            spabhost.value IS NOT 'noarch'
+            spabhost.value != 'noarch'
             AND dphasarch.package IS NULL
         )
     )
-    AND dp.repo = ?
+    AND dp.repo = $2
 UNION
 ALL
 SELECT
@@ -915,7 +916,7 @@ SELECT
 FROM
     dpkg_package_duplicate
 WHERE
-    repo = ?
+    repo = $3
 ORDER BY
     filename
 ";
@@ -929,7 +930,7 @@ SELECT
 FROM
     package_dependencies
 WHERE
-    dependency = ?
+    dependency = $1
     AND relationship IN ('PKGDEP', 'BUILDDEP', 'PKGRECOM', 'PKGSUG')
 ORDER BY
     relationship,

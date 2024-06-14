@@ -48,7 +48,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     struct DpkgMeta {
         hasmeta: bool,
         version: String,
-        testing: i64,
+        testing: i32,
         repo: String,
         size: i64,
     }
@@ -59,7 +59,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         //architecture: String,
         repo: String,
         reponame: String,
-        testing: i64,
+        testing: i32,
         //filename: String,
         size: i64,
     }
