@@ -136,9 +136,7 @@ WHERE
         dpkg.architecture = 'noarch'
         OR $2 != 'noarch'
     )
-    AND (
-        (spabhost.value = 'noarch') = (dpkg.architecture IS 'noarch')
-    )
+    AND (coalesce(spabhost.value, '') = 'noarch') = (dpkg.architecture = 'noarch')
 GROUP BY
     name
 HAVING
@@ -202,7 +200,7 @@ FROM
 WHERE
     full_version IS NOT null
     AND dpkg_version IS null
-    AND ((spabhost.value = 'noarch') = ($2 = 'noarch'))
+    AND (coalesce(spabhost.value, '') = 'noarch') = ($2 = 'noarch')
     AND (
         EXISTS(
             SELECT
@@ -449,9 +447,7 @@ FROM
     LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = p.name
 WHERE
     dpkg.repo = $1
-    AND (
-        (spabhost.value = 'noarch') = (dpkg.architecture = 'noarch')
-    )
+    AND (coalesce(spabhost.value, '') = 'noarch') = (dpkg.architecture = 'noarch')
 ORDER BY
     p.name
 ";
@@ -787,7 +783,7 @@ SELECT
             ELSE ''
         END || CASE
             WHEN (
-                spabhost.value = 'noarch'
+                coalesce(spabhost.value, '') = 'noarch'
                 AND dpnoarch.package IS NULL
             ) THEN 'noarch'
             ELSE ''
@@ -828,7 +824,7 @@ WHERE
         dpnew.package IS NULL
         OR packages.name IS NULL
         OR (
-            spabhost.value = 'noarch'
+            coalesce(spabhost.value, '') = 'noarch'
             AND dpnoarch.package IS NULL
         )
     )
@@ -858,7 +854,7 @@ SELECT
             ELSE ''
         END || CASE
             WHEN (
-                spabhost.value != 'noarch'
+                coalesce(spabhost.value, 'noarch') != 'noarch'
                 AND dphasarch.package IS NULL
             ) THEN 'hasarch'
             ELSE ''
@@ -899,7 +895,7 @@ WHERE
         dpnew.package IS NULL
         OR packages.name IS NULL
         OR (
-            spabhost.value != 'noarch'
+            coalesce(spabhost.value, 'noarch') != 'noarch'
             AND dphasarch.package IS NULL
         )
     )
