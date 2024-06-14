@@ -185,7 +185,7 @@ SELECT
     v_packages.name AS name,
     description,
     full_version,
-    dpkg_version,
+    coalesce(dpkg_version, '') AS dpkg_version,
     v_packages.tree_category
 FROM
     v_packages
