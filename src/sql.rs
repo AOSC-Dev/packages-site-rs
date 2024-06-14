@@ -107,7 +107,7 @@ ORDER BY
 
 pub const SQL_GET_PACKAGE_LAGGING: &str = "
 SELECT
-    p.name name,
+    p.name AS name,
     dpkg.dpkg_version dpkg_version,
     (
         (
@@ -188,7 +188,7 @@ ORDER BY
 
 pub const SQL_GET_PACKAGE_MISSING: &str = "
 SELECT
-    v_packages.name name,
+    v_packages.name AS name,
     description,
     full_version,
     dpkg_version,
@@ -220,7 +220,7 @@ ORDER BY
 
 pub const SQL_GET_PACKAGE_GHOST: &str = "
 SELECT
-    package name,
+    package AS name,
     dpkg_version
 FROM
     v_dpkg_packages_new
@@ -419,7 +419,7 @@ LIMIT
 
 pub const SQL_GET_PACKAGE_REPO: &str = "
 SELECT
-    p.name name,
+    p.name AS name,
     p.full_version full_version,
     dpkg.dpkg_version dpkg_version,
     p.description description,
