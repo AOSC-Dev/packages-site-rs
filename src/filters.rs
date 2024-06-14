@@ -17,11 +17,9 @@ pub fn d<'a>(s: &'a str, default: &'a str, _: bool) -> ::askama::Result<&'a str>
     }
 }
 
-pub fn fmt_timestamp(timestamp: &i64) -> ::askama::Result<String> {
-    if let Ok(datetime) = time::OffsetDateTime::from_unix_timestamp(*timestamp) {
-        if let Ok(date) = datetime.format(&time::format_description::well_known::Rfc2822) {
-            return Ok(date);
-        }
+pub fn fmt_timestamp(timestamp: &time::OffsetDateTime) -> ::askama::Result<String> {
+    if let Ok(date) = timestamp.format(&time::format_description::well_known::Rfc2822) {
+        return Ok(date);
     }
     bail!("cannot format timestamp {timestamp} into RFC2822 format")
 }

@@ -391,7 +391,7 @@ pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Resu
         pub message: String,
         pub maintainer_name: String,
         pub maintainer_email: String,
-        pub timestamp: i64,
+        pub timestamp: time::OffsetDateTime,
     }
 
     let changes: Vec<Change> = query_as(SQL_GET_PACKAGE_CHANGELOG)
