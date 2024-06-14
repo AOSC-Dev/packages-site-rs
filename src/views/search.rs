@@ -57,13 +57,13 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
         let q = q.trim().to_lowercase().replace([' ', '_'], "-");
         let mut row = sqlx::query("SELECT 1 FROM packages WHERE name = ?")
             .bind(&q)
-            .fetch_optional(&db.abbs)
+            .fetch_optional(&db.meta)
             .await?;
 
         if row.is_none() {
             row = sqlx::query(SQL_GET_PACKAGE_INFO_GHOST)
                 .bind(&q)
-                .fetch_optional(&db.abbs)
+                .fetch_optional(&db.meta)
                 .await?;
         }
         if row.is_some() {
@@ -81,7 +81,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
         .bind(&qesc)
         .bind(&qesc)
         .bind(&qesc)
-        .fetch_page(&db.abbs, query.get_page())
+        .fetch_page(&db.meta, query.get_page())
         .await?;
 
     let packages = &packages

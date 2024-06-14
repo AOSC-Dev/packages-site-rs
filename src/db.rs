@@ -3,29 +3,21 @@ use anyhow::Result;
 use axum::async_trait;
 use itertools::Itertools;
 use serde::Serialize;
-use sqlx::{pool::PoolOptions, query::QueryAs, Database, Executor, FromRow, IntoArguments, Pool, Postgres, Sqlite};
+use sqlx::{pool::PoolOptions, query::QueryAs, Database, Executor, FromRow, IntoArguments, Pool, Postgres};
 
 pub struct Db {
-    pub abbs: Pool<Sqlite>,
-    pub pg: Pool<Postgres>,
+    pub meta: Pool<Postgres>,
+    pub pv: Pool<Postgres>,
 }
 
 const PAGESIZE: u32 = 60;
 
 impl Db {
     pub async fn open(config: &Config) -> Result<Self> {
-        let opt = sqlx::sqlite::SqliteConnectOptions::new()
-            .read_only(true)
-            .immutable(true)
-            .foreign_keys(false)
-            .collation("vercomp", deb_version::compare_versions)
-            .filename(&config.db.abbs)
-            .journal_mode(sqlx::sqlite::SqliteJournalMode::Off);
+        let meta: Pool<Postgres> = PoolOptions::new().connect(&config.db.meta_conn).await?;
+        let pv = PoolOptions::new().connect_lazy(&config.db.pv_conn)?;
 
-        let abbs: Pool<Sqlite> = PoolOptions::new().connect_with(opt).await?;
-        let pg = PoolOptions::new().connect_lazy(&config.db.pg_conn)?;
-
-        Ok(Db { abbs, pg })
+        Ok(Db { meta, pv })
     }
 }
 

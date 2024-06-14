@@ -98,15 +98,15 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
     }
 
     let tree_branches: Vec<TreeBranch> = query_as("SELECT name, tree, branch FROM tree_branches")
-        .fetch_all(&db.abbs)
+        .fetch_all(&db.meta)
         .await?;
     let repos = db_repos(&db).await?;
 
     let olddebs: Vec<OldDeb> = query_as("SELECT repo, oldcnt FROM dpkg_repo_stats")
-        .fetch_all(&db.abbs)
+        .fetch_all(&db.meta)
         .await?;
 
-    let issues: Vec<IssueResult> = query_as(SQL_ISSUES_STATS).fetch_all(&db.pg).await?;
+    let issues: Vec<IssueResult> = query_as(SQL_ISSUES_STATS).fetch_all(&db.pv).await?;
     let mut total = 0;
     let mut percent = 0.0;
 
@@ -210,7 +210,7 @@ pub async fn qa_index(_: Qa, q: Query, db: Ext) -> Result<impl IntoResponse> {
 
     // recent packages
     let recent = query_as(SQL_ISSUES_RECENT)
-        .fetch_all(&db.pg)
+        .fetch_all(&db.pv)
         .await?
         .into_iter()
         .filter_map(|Recent { package, version, errs }: Recent| {
@@ -289,7 +289,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
             query("SELECT name FROM dpkg_repos WHERE name=? UNION ALL SELECT name FROM tree_branches WHERE name=?")
                 .bind(repo)
                 .bind(repo)
-                .fetch_optional(&db.abbs)
+                .fetch_optional(&db.meta)
                 .await?;
 
         if res.is_none() {
@@ -307,7 +307,7 @@ async fn qa_code_common(code: String, repo: Option<String>, q: Query, db: Ext) -
     let (ref pkgs, page): (Vec<Package>, _) = query_as(SQL_ISSUES_CODE)
         .bind(code)
         .bind(&repo)
-        .fetch_page(&db.pg, q.get_page())
+        .fetch_page(&db.pv, q.get_page())
         .await?;
 
     let ctx = Template {
@@ -397,12 +397,12 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
 
     let mut pkg: Option<Package> = query_as(SQL_GET_PACKAGE_INFO)
         .bind(name)
-        .fetch_optional(&db.abbs)
+        .fetch_optional(&db.meta)
         .await?;
     if pkg.is_none() {
         pkg = query_as(SQL_GET_PACKAGE_INFO_GHOST)
             .bind(name)
-            .fetch_optional(&db.abbs)
+            .fetch_optional(&db.meta)
             .await?;
     }
     let pkg = if let Some(pkg) = pkg {
@@ -411,7 +411,7 @@ pub async fn qa_package(QaPkg { name }: QaPkg, q: Query, db: Ext) -> Result<impl
         not_found!("Package \"{name}\" not found.");
     };
 
-    let issues: Vec<PkgIssue> = query_as(SQL_ISSUES_PACKAGE).bind(name).fetch_all(&db.pg).await?;
+    let issues: Vec<PkgIssue> = query_as(SQL_ISSUES_PACKAGE).bind(name).fetch_all(&db.pv).await?;
 
     let errno_examples = issues
         .iter()

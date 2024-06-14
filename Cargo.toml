@@ -19,13 +19,14 @@ sqlx = { version = "0.6", features = [
     "sqlite",
     "postgres",
     "runtime-tokio-rustls",
+    "time"
 ] }
 serde = { version = "^1", features = ["derive"] }
 toml = "0.7"
 anyhow = "^1"
 askama = "0.12"
 thiserror = "^1"
-time = { version = "0.3", default-features = false, features = ["formatting"] }
+time = { version = "0.3", default-features = false, features = ["formatting", "serde"] }
 textwrap = "0.16"
 rust-embed = "^6"
 mime_guess = "^2"

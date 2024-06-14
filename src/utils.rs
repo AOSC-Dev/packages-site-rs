@@ -270,7 +270,7 @@ pub async fn db_last_modified(db: Ext) -> Result<i64> {
 
     let res: Option<CommitTime> =
         query_as("SELECT commit_time FROM package_versions ORDER BY commit_time DESC LIMIT 1")
-            .fetch_optional(&db.abbs)
+            .fetch_optional(&db.meta)
             .await?;
 
     Ok(res.map(|t| t.commit_time).unwrap_or_default())
@@ -283,7 +283,7 @@ pub struct Repo {
     pub realname: String,
     pub architecture: String,
     pub branch: String,
-    pub date: i64,
+    pub date: time::OffsetDateTime,
     pub testing: i64,
     pub category: String,
     pub testingonly: i64,
@@ -294,7 +294,7 @@ pub struct Repo {
 }
 
 pub async fn db_repos(db: &Ext) -> Result<IndexMap<String, Repo>> {
-    let repos: Vec<Repo> = query_as(SQL_GET_REPO_COUNT).fetch_all(&db.abbs).await?;
+    let repos: Vec<Repo> = query_as(SQL_GET_REPO_COUNT).fetch_all(&db.meta).await?;
 
     let res = repos.into_iter().map(|repo| (repo.name.clone(), repo)).collect();
 
@@ -307,11 +307,11 @@ pub struct Tree {
     pub name: String,
     pub category: String,
     pub url: String,
-    pub date: i64,
+    pub date: time::OffsetDateTime,
     pub pkgcount: i64,
 }
 pub async fn db_trees(db: &Ext) -> Result<IndexMap<String, Tree>> {
-    let trees: Vec<Tree> = query_as(SQL_GET_TREES).fetch_all(&db.abbs).await?;
+    let trees: Vec<Tree> = query_as(SQL_GET_TREES).fetch_all(&db.meta).await?;
 
     let res = trees.into_iter().map(|tree| (tree.name.clone(), tree)).collect();
 

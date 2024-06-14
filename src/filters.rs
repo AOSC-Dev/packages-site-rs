@@ -43,13 +43,10 @@ pub fn get_first_line(s: &str) -> ::askama::Result<&str> {
     Ok(s.lines().next().unwrap_or(""))
 }
 
-pub fn strftime(timestamp: &i64, s: &str) -> ::askama::Result<String> {
-    match time::OffsetDateTime::from_unix_timestamp(*timestamp) {
-        Ok(datetime) => match time::format_description::parse(s) {
-            Ok(fmt) => match datetime.format(&fmt) {
-                Ok(res) => Ok(res),
-                Err(e) => bail!("{}", e.to_string()),
-            },
+pub fn strftime(datetime: &time::OffsetDateTime, s: &str) -> ::askama::Result<String> {
+    match time::format_description::parse(s) {
+        Ok(fmt) => match datetime.format(&fmt) {
+            Ok(res) => Ok(res),
             Err(e) => bail!("{}", e.to_string()),
         },
         Err(e) => bail!("{}", e.to_string()),
@@ -58,10 +55,6 @@ pub fn strftime(timestamp: &i64, s: &str) -> ::askama::Result<String> {
 
 pub fn calc_color_ratio(ratio: &f64, max: &f64) -> ::askama::Result<f64> {
     Ok(100.0 - 100.0 / 3.0 * (*ratio) / (*max))
-}
-
-pub fn strftime_i32(timestamp: &i32, s: &str) -> ::askama::Result<String> {
-    strftime(&(*timestamp as i64), s)
 }
 
 pub fn sizeof_fmt(size: &i64) -> ::askama::Result<String> {

@@ -47,18 +47,18 @@ ORDER BY
 
 pub const SQL_GET_REPO_COUNT: &str = "
 SELECT
-    drs.repo name,
-    dr.realname realname,
+    drs.repo AS name,
+    dr.realname AS realname,
     dr.architecture,
-    dr.suite branch,
-    dr.date date,
-    dr.testing testing,
-    dr.category category,
-    (drm.name IS NULL) testingonly,
-    coalesce(drs.packagecnt, 0) pkgcount,
-    coalesce(drs.ghostcnt, 0) ghost,
-    coalesce(drs.laggingcnt, 0) lagging,
-    coalesce(drs.missingcnt, 0) missing
+    dr.suite AS branch,
+    dr.date AS date,
+    dr.testing AS testing,
+    dr.category AS category,
+    (drm.name IS NULL) AS testingonly,
+    coalesce(drs.packagecnt, 0) AS pkgcount,
+    coalesce(drs.ghostcnt, 0) AS ghost,
+    coalesce(drs.laggingcnt, 0) AS lagging,
+    coalesce(drs.missingcnt, 0) AS missing
 FROM
     dpkg_repo_stats drs
     LEFT JOIN dpkg_repos dr ON dr.name = drs.repo
@@ -82,7 +82,7 @@ ORDER BY
 
 pub const SQL_GET_TREES: &str = "
 SELECT
-    tree name,
+    tree AS name,
     category,
     url,
     max(date) date,
@@ -100,7 +100,7 @@ FROM
             INNER JOIN trees t ON t.name = p.tree
     ) q1
 GROUP BY
-    tree
+    tree, category, url
 ORDER BY
     pkgcount DESC
 ";

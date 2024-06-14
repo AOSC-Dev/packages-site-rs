@@ -13,7 +13,6 @@ use hyper::Server;
 use hyperlocal::UnixServerExt;
 use std::sync::Arc;
 use structopt::StructOpt;
-use tower_http::services::ServeFile;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
@@ -66,7 +65,6 @@ async fn main() -> Result<()> {
         .typed_get(cleanmirror)
         .typed_get(revdep)
         .typed_get(license)
-        .nest_service("/data", ServeFile::new(config.db.abbs))
         .fallback(fallback)
         .layer(
             TraceLayer::new_for_http()

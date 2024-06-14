@@ -43,7 +43,7 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
         .collect_vec();
 
     let total: i64 = source_trees.iter().map(|(_name, repo)| repo.pkgcount).sum();
-    let updates = query_as(SQL_GET_PACKAGE_NEW).fetch_all(&db.abbs).await?;
+    let updates = query_as(SQL_GET_PACKAGE_NEW).fetch_all(&db.meta).await?;
 
     let ctx = Template {
         total,
@@ -79,7 +79,7 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
         packages: &'a Vec<Package>,
     }
 
-    let packages: &Vec<Package> = &query_as(SQL_GET_PACKAGE_NEW_LIST).bind(100).fetch_all(&db.abbs).await?;
+    let packages: &Vec<Package> = &query_as(SQL_GET_PACKAGE_NEW_LIST).bind(100).fetch_all(&db.meta).await?;
 
     if packages.is_empty() {
         not_found!("There's no updates.");

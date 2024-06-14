@@ -47,7 +47,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
 
     let (packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_REPO)
         .bind(repo)
-        .fetch_page(&db.abbs, q.get_page())
+        .fetch_page(&db.meta, q.get_page())
         .await?;
 
     let packages = &packages
@@ -115,7 +115,7 @@ pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<imp
     let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_LAGGING)
         .bind(repo)
         .bind(architecture)
-        .fetch_page(&db.abbs, q.get_page())
+        .fetch_page(&db.meta, q.get_page())
         .await?;
 
     if packages.is_empty() {
@@ -165,7 +165,7 @@ pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<imp
         .bind(&repo.realname)
         .bind(&repo.architecture)
         .bind(&repo.realname)
-        .fetch_page(&db.abbs, q.get_page())
+        .fetch_page(&db.meta, q.get_page())
         .await?;
 
     if packages.is_empty() {
@@ -210,7 +210,7 @@ pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl Into
 
     let (ref packages, page): (Vec<Package>, _) = query_as(SQL_GET_PACKAGE_GHOST)
         .bind(repo)
-        .fetch_page(&db.abbs, q.get_page())
+        .fetch_page(&db.meta, q.get_page())
         .await?;
 
     if packages.is_empty() {

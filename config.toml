@@ -4,5 +4,5 @@ log = "info" # general logging level
 sqlx_log = "info" # sqlx logging level. Set to `info` or `debug` to get SQL query which has executed
 
 [db]
-abbs = "data/abbs.db" # path to abbs.db. Generally, it should be placed in `data` directory
-pg_conn = "postgresql://postgres@localhost/packages" # postgres connection, provided by p-vector-rs
+pv_conn = "postgresql:///" # postgres connection to db provided by p-vector-rs
+meta_conn = "postgresql:///" # postgres connection to db provided by abbs-meta-collector and dpkgrepo-meta

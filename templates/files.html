@@ -6,8 +6,8 @@
 {% block main %}
 <p><b><a href="https://repo.aosc.io/debs/{{ pkg.filename }}">Download</a></b></p>
 <p><b class="pkg-field">Repository</b>: {{ pkg.repo }}</p>
-<p><b class="pkg-field">Package time</b>: <time datetime="{{ pkg_debtime|strftime_i32("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{
-        pkg_debtime|strftime_i32("[year]-[month]-[day] [hour]:[minute]") }}</time></p>
+<p><b class="pkg-field">Package time</b>: <time datetime="{{ pkg_debtime|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{
+        pkg_debtime|strftime("[year]-[month]-[day] [hour]:[minute]") }}</time></p>
 <p><b class="pkg-field">Size</b>: {{ pkg.size }}</p>
 <p><b class="pkg-field">SHA256</b>: <code>{{ pkg.sha256 }}</code></p>
 <p><b class="pkg-field">Installed Size</b>: {{ (pkg.installed_size*1024)|sizeof_fmt }}</p>

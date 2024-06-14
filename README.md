@@ -6,7 +6,7 @@
 
 # 功能
 
-- 仅依赖 `abbs.db` 和 `p-vector-rs` 生成的数据库，配置更简单
+- 仅依赖 `abbs-meta-collector`、`dpkgrepo-meta` 和 `p-vector-rs` 生成的数据库，配置更简单
 - 相较于原实现，添加了更多功能
     - 展示解析错误的软件包具体的错误信息
     - 展示存在测试分支的软件包及其版本
@@ -34,7 +34,7 @@ cargo build --release
 
 # 运行
 
-你需要先去参照 `abbs-meta` 生成 `abbs.db` ，或者你也可以从 [packages-site](http://packages.aosc.io/data/abbs.db) 上直接下载，将其放在 data 目录中。如果你想运行 `Package Quality Assurance` 相关的页面，你需要参照 [`p-vector-rs`](http://github.com/AOSC-Dev/p-vector-rs) 生成对应的 PostgreSQL 数据库。
+你需要先去参照 `abbs-meta-collector` 和 `dpkgrepo-meta` 把信息保存到 PostgreSQL 数据库中。如果你想运行 `Package Quality Assurance` 相关的页面，你需要参照 [`p-vector-rs`](http://github.com/AOSC-Dev/p-vector-rs) 生成对应的 PostgreSQL 数据库。
 
 ```bash
 # run packages-site
@@ -50,8 +50,6 @@ Add `?type=tsv` to endpoints with a large table, then you will get a Tab-separat
 On listings that have multiple pages, use `?page=n` to get each page.Use `?page=all` to avoid paging. For example, use `?page=all&type=tsv` to get a full listing in TSV.
 
 The `/list.json` gives a full list of packages.
-
-You can download the [abbs-meta](https://github.com/AOSC-Dev/abbs-meta) SQLite database from `/data/abbs.db`.
 
 # 运行截图
 

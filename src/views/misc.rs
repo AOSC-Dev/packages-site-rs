@@ -62,7 +62,7 @@ pub async fn pkgtrie(_: PkgTrie, db: Ext) -> Result<impl IntoResponse> {
         }
     }
 
-    let pkgs: Vec<Package> = query_as("SELECT name FROM packages").fetch_all(&db.abbs).await?;
+    let pkgs: Vec<Package> = query_as("SELECT name FROM packages").fetch_all(&db.meta).await?;
 
     let mut trie: Trie = Default::default();
     pkgs.iter().for_each(|pkg| trie.insert(&pkg.name));
@@ -102,7 +102,7 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
         packages: Vec<Package>,
     }
 
-    let packages: Vec<Package> = query_as(SQL_GET_PACKAGE_LIST).fetch_all(&db.abbs).await?;
+    let packages: Vec<Package> = query_as(SQL_GET_PACKAGE_LIST).fetch_all(&db.meta).await?;
 
     let res = PkgList {
         last_modified: db_last_modified(db).await?,
@@ -142,7 +142,7 @@ pub async fn cleanmirror(CleanMirror { repo }: CleanMirror, q: Query, db: Ext) -
     .bind(repo)
     .bind(repo)
     .bind(repo)
-    .fetch_all(&db.abbs)
+    .fetch_all(&db.meta)
     .await?;
 
     let debs = if let Some(reason) = reason {

@@ -9,8 +9,8 @@ pub struct Config {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Db {
-    pub pg_conn: String,
-    pub abbs: String,
+    pub pv_conn: String,
+    pub meta_conn: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

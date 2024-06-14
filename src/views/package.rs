@@ -84,8 +84,8 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         path: String,
         tree: String,
         branch: String,
-        col: Option<u32>,
-        line: Option<u32>,
+        col: Option<i32>,
+        line: Option<i32>,
     }
 
     #[derive(FromRow)]
@@ -119,14 +119,14 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
 
     let mut pkg: Option<Package> = query_as(SQL_GET_PACKAGE_INFO)
         .bind(&name)
-        .fetch_optional(&db.abbs)
+        .fetch_optional(&db.meta)
         .await?;
     let mut pkgintree = true;
 
     if pkg.is_none() {
         pkg = query_as(SQL_GET_PACKAGE_INFO_GHOST)
             .bind(&name)
-            .fetch_optional(&db.abbs)
+            .fetch_optional(&db.meta)
             .await?;
         pkgintree = false;
     }
@@ -138,16 +138,16 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     };
 
     // collect package error messages
-    let errors: Vec<PackageError> = query_as(SQL_GET_PACKAGE_ERRORS).bind(&name).fetch_all(&db.abbs).await?;
+    let errors: Vec<PackageError> = query_as(SQL_GET_PACKAGE_ERRORS).bind(&name).fetch_all(&db.meta).await?;
 
     // Generate version matrix
 
-    let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG).bind(&name).fetch_all(&db.abbs).await?;
+    let dpkgs: Vec<DpkgPackage> = query_as(SQL_GET_PACKAGE_DPKG).bind(&name).fetch_all(&db.meta).await?;
 
     // 1.1 process package testing
     let testing_vers: Vec<PackageTesting> = query_as(SQL_GET_PACKAGE_TESTING)
         .bind(&name)
-        .fetch_all(&db.abbs)
+        .fetch_all(&db.meta)
         .await?;
     let mut testing_ver_count = HashMap::new();
     testing_vers.iter().for_each(|PackageTesting { version, .. }| {
@@ -189,7 +189,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     // 2.1 generate src_vers from SQL query
     let src_vers: Vec<PackageVersion> = query_as(SQL_GET_PACKAGE_VERSIONS)
         .bind(&name)
-        .fetch_all(&db.abbs)
+        .fetch_all(&db.meta)
         .await?;
     let src_vers: HashMap<_, _> = src_vers.into_iter().map(|v| (v.fullver, v.branch)).collect();
 
@@ -396,7 +396,7 @@ pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Resu
 
     let changes: Vec<Change> = query_as(SQL_GET_PACKAGE_CHANGELOG)
         .bind(&name)
-        .fetch_all(&db.abbs)
+        .fetch_all(&db.meta)
         .await?;
 
     if changes.is_empty() {
@@ -418,7 +418,7 @@ typed_path!("/revdep/:name", Revdep, name);
 pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let res = query("SELECT 1 FROM packages WHERE name = ?")
         .bind(&name)
-        .fetch_optional(&db.abbs)
+        .fetch_optional(&db.meta)
         .await?;
     if res.is_none() {
         not_found!("Package \"{name}\" not found.");
@@ -464,7 +464,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 
     let deps: Vec<RevDep> = query_as(SQL_GET_PACKAGE_REV_REL)
         .bind(&name)
-        .fetch_all(&db.abbs)
+        .fetch_all(&db.meta)
         .await?;
 
     let deps_map: IndexMap<_, _> = deps
@@ -496,7 +496,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 
     let sobreaks: Vec<Sobreak> = query_as("SELECT dep_package, deplist FROM v_so_breaks_dep WHERE package=$1")
         .bind(&name)
-        .fetch_all(&db.pg)
+        .fetch_all(&db.pv)
         .await?;
 
     let toposort = |sobreaks: Vec<Sobreak>| {
@@ -589,7 +589,7 @@ pub async fn files(
 
     #[derive(Debug, FromRow)]
     struct DebTime {
-        debtime: i32,
+        debtime: time::OffsetDateTime,
     }
 
     #[derive(Debug, FromRow)]
@@ -616,7 +616,7 @@ pub async fn files(
         files: &'a Vec<File>,
         sodepends: Vec<String>,
         soprovides: Vec<String>,
-        pkg_debtime: i32,
+        pkg_debtime: time::OffsetDateTime,
         pkg: Package,
     }
 
@@ -630,7 +630,7 @@ pub async fn files(
         .bind(&name)
         .bind(&version)
         .bind(&repo)
-        .fetch_optional(&db.abbs)
+        .fetch_optional(&db.meta)
         .await?;
     let pkg = if let Some(pkg) = pkg {
         pkg
@@ -640,15 +640,15 @@ pub async fn files(
 
     let pkg_debtime = query_as("SELECT debtime FROM pv_packages WHERE filename=$1")
         .bind(&pkg.filename)
-        .fetch_optional(&db.pg)
+        .fetch_optional(&db.pv)
         .await?
-        .map_or(0, |d: DebTime| d.debtime);
+        .map_or(time::OffsetDateTime::UNIX_EPOCH, |d: DebTime| d.debtime);
 
     let files: &Vec<File> = &query_as(SQL_GET_PACKAGE_DEB_FILES)
         .bind(&name)
         .bind(&version)
         .bind(&repo)
-        .fetch_all(&db.pg)
+        .fetch_all(&db.pv)
         .await?;
 
     // generate sodepends and soprovides list
@@ -656,7 +656,7 @@ pub async fn files(
         .bind(&name)
         .bind(&version)
         .bind(&repo)
-        .fetch_all(&db.pg)
+        .fetch_all(&db.pv)
         .await?;
     let mut sodepends = vec![];
     let mut soprovides = vec![];
