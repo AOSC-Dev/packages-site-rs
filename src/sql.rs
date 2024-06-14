@@ -236,7 +236,7 @@ WHERE
 
 pub const SQL_GET_PACKAGE_INFO_GHOST: &str = "
 SELECT
-    DISTINCT package name,
+    DISTINCT package AS name,
     '' tree,
     '' tree_category,
     '' branch,
@@ -245,17 +245,17 @@ SELECT
     '' pkg_section,
     '' directory,
     '' description,
-    '' version,
+    '' AS version,
     '' full_version,
-    NULL commit_time,
+    to_timestamp(0) commit_time,
     '' committer,
     '' dependency,
     '' spec_path,
-    0 noarch,
-    NULL fail_arch,
-    NULL srctype,
-    NULL srcurl,
-    0 hasrevdep
+    false noarch,
+    '' fail_arch,
+    '' srctype,
+    '' srcurl,
+    false hasrevdep
 FROM
     dpkg_packages
 WHERE
