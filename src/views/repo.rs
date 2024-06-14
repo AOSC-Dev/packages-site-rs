@@ -16,16 +16,16 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
         full_version: String,
         dpkg_version: String,
         description: String,
-        status: i64,
+        status: i32,
     }
 
     #[derive(Serialize)]
     struct PackageTemplate {
-        ver_compare: i64,
+        ver_compare: i32,
         name: String,
         dpkg_version: String,
         description: String,
-        status: i64,
+        status: i32,
     }
 
     #[derive(Template, Serialize)]

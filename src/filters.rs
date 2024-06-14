@@ -69,11 +69,11 @@ pub fn sizeof_fmt(size: &i64) -> ::askama::Result<String> {
     Ok(size.to_string())
 }
 
-pub fn fmt_ver_compare(ver_compare: &i64) -> ::askama::Result<&'static str> {
+pub fn fmt_ver_compare(ver_compare: &i32) -> ::askama::Result<&'static str> {
     Ok(ver_rel(*ver_compare))
 }
 
-pub fn fmt_pkg_status(status: &i64) -> ::askama::Result<&'static str> {
+pub fn fmt_pkg_status(status: &i32) -> ::askama::Result<&'static str> {
     Ok(match *status {
         0 => "normal",
         1 => "error",

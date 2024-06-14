@@ -15,8 +15,8 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
         description: String,
         full_version: String,
         commit_time: time::OffsetDateTime,
-        ver_compare: i64,
-        status: i64,
+        ver_compare: i32,
+        status: i32,
     }
 
     #[derive(Template, Serialize)]
@@ -63,8 +63,8 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
         description: String,
         full_version: String,
         commit_time: time::OffsetDateTime,
-        ver_compare: i64,
-        status: i64,
+        ver_compare: i32,
+        status: i32,
     }
 
     #[derive(Template, Serialize)]

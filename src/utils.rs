@@ -318,7 +318,7 @@ pub async fn db_trees(db: &Ext) -> Result<IndexMap<String, Tree>> {
     Ok(res)
 }
 
-pub fn ver_rel(ver_compare: i64) -> &'static str {
+pub fn ver_rel(ver_compare: i32) -> &'static str {
     match ver_compare {
         -2 => "deprecated",
         -1 => "old",
