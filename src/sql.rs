@@ -911,7 +911,7 @@ ORDER BY
 pub const SQL_GET_PACKAGE_REV_REL: &str = "
 SELECT
     package,
-    coalesce(relop, '') || coalesce(version, '') version,
+    coalesce(relop, '') || coalesce(version, '') AS version,
     relationship,
     architecture
 FROM
