@@ -416,7 +416,7 @@ pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Resu
 
 typed_path!("/revdep/:name", Revdep, name);
 pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl IntoResponse> {
-    let res = query("SELECT 1 FROM packages WHERE name = ?")
+    let res = query("SELECT 1 FROM packages WHERE name = $1")
         .bind(&name)
         .fetch_optional(&db.meta)
         .await?;
@@ -494,7 +494,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         })
         .collect_vec();
 
-    let sobreaks: Vec<Sobreak> = query_as("SELECT dep_package, deplist FROM v_so_breaks_dep WHERE package=$1")
+    let sobreaks: Vec<Sobreak> = query_as("SELECT dep_package, deplist FROM v_so_breaks_dep WHERE package = $1")
         .bind(&name)
         .fetch_all(&db.pv)
         .await?;
