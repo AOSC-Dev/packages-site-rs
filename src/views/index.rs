@@ -14,7 +14,7 @@ pub async fn index(_: Index, q: Query, db: Ext) -> Result<impl IntoResponse> {
         name: String,
         description: String,
         full_version: String,
-        commit_time: i64,
+        commit_time: time::OffsetDateTime,
         ver_compare: i64,
         status: i64,
     }
@@ -62,7 +62,7 @@ pub async fn updates(_: Updates, q: Query, db: Ext) -> Result<impl IntoResponse>
         dpkg_version: String,
         description: String,
         full_version: String,
-        commit_time: i64,
+        commit_time: time::OffsetDateTime,
         ver_compare: i64,
         status: i64,
     }

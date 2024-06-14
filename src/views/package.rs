@@ -27,7 +27,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         description: String,
         version: String,
         full_version: String,
-        commit_time: i64,
+        commit_time: time::OffsetDateTime,
         committer: String,
         dependency: String,
         noarch: bool,

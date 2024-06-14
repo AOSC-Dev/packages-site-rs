@@ -112,12 +112,12 @@ SELECT
     (
         (
             CASE
-                WHEN ifnull(pv.epoch, '') = '' THEN ''
+                WHEN coalesce(pv.epoch, '') = '' THEN ''
                 ELSE pv.epoch || ':'
             END
         ) || pv.version || (
             CASE
-                WHEN ifnull(pv.release, '') IN ('', '0') THEN ''
+                WHEN coalesce(pv.release, '') IN ('', '0') THEN ''
                 ELSE '-' || pv.release
             END
         )
@@ -143,7 +143,7 @@ GROUP BY
     name
 HAVING
     (
-        max(dpkg_version COLLATE vercomp) < full_version COLLATE vercomp
+        comparable_dpkgver(max_dpkgver(dpkg_version)) < comparable_dpkgver(full_version)
     )
 ORDER BY
     name
@@ -166,13 +166,13 @@ SELECT
     p.committer,
     dpkg.dpkg_version dpkg_version,
     group_concat(DISTINCT dpkg.reponame) dpkg_availrepos,
-    ifnull(
+    coalesce(
         CASE
-            WHEN dpkg.dpkg_version IS NOT null THEN (
-                dpkg.dpkg_version > p.full_version COLLATE vercomp
-            ) - (
-                dpkg.dpkg_version < p.full_version COLLATE vercomp
-            )
+            WHEN dpkg.dpkg_version IS NOT null THEN (CASE WHEN
+                comparable_dpkgver(dpkg.dpkg_version) > comparable_dpkgver(p.full_version)
+            THEN 1 ELSE 0 END) - (CASE WHEN
+                comparable_dpkgver(dpkg.dpkg_version) < comparable_dpkgver(p.full_version)
+            THEN 1 ELSE 0 END)
             ELSE -1
         END,
         -2
@@ -327,9 +327,13 @@ SELECT
     description,
     full_version,
     commit_time,
-    ifnull(
+    coalesce(
         CASE
-            WHEN dpkg_version IS NOT null THEN (dpkg_version > full_version COLLATE vercomp) - (dpkg_version < full_version COLLATE vercomp)
+            WHEN dpkg_version IS NOT null THEN (CASE WHEN
+                comparable_dpkgver(dpkg_version) > comparable_dpkgver(full_version)
+            THEN 1 ELSE 0 END) - (CASE WHEN
+                comparable_dpkgver(dpkg_version) < comparable_dpkgver(full_version)
+            THEN 1 ELSE 0 END)
             ELSE -1
         END,
         -2
@@ -359,7 +363,7 @@ FROM
 WHERE
     full_version IS NOT null
 GROUP BY
-    name
+    name, description, full_version, commit_time, dpkg_version, error.package, testing.package
 ORDER BY
     commit_time DESC,
     name ASC
@@ -373,9 +377,13 @@ SELECT
     description,
     full_version,
     commit_time,
-    ifnull(
+    coalesce(
         CASE
-            WHEN dpkg.dpkg_version IS NOT null THEN (dpkg.dpkg_version > full_version COLLATE vercomp) - (dpkg.dpkg_version < full_version COLLATE vercomp)
+            WHEN dpkg.dpkg_version IS NOT null THEN (CASE WHEN
+                comparable_dpkgver(dpkg.dpkg_version) > comparable_dpkgver(full_version)
+            THEN 1 ELSE 0 END) - (CASE WHEN
+                comparable_dpkgver(dpkg.dpkg_version) < comparable_dpkgver(full_version)
+            THEN 1 ELSE 0 END)
             ELSE -1
         END,
         -2
@@ -405,7 +413,7 @@ FROM
 WHERE
     full_version IS NOT null
 GROUP BY
-    name
+    name, description, full_version, commit_time, dpkg_version, error.package, testing.package
 ORDER BY
     commit_time DESC,
     name ASC
@@ -521,7 +529,7 @@ WHERE
     package = ?
 ORDER BY
     dr.realname ASC,
-    version COLLATE vercomp DESC,
+    comparable_dpkgver(version) DESC,
     testing DESC
 ";
 
@@ -531,12 +539,12 @@ SELECT
     (
         (
             CASE
-                WHEN ifnull(epoch, '') = '' THEN ''
+                WHEN coalesce(epoch, '') = '' THEN ''
                 ELSE epoch || ':'
             END
         ) || version || (
             CASE
-                WHEN ifnull(release, '') IN ('', '0') THEN ''
+                WHEN coalesce(release, '') IN ('', '0') THEN ''
                 ELSE '-' || release
             END
         )
@@ -794,7 +802,7 @@ FROM
     LEFT JOIN (
         SELECT
             package,
-            max(version COLLATE vercomp) version
+            max_dpkgver(version) version
         FROM
             dpkg_packages
         WHERE
@@ -808,7 +816,7 @@ FROM
     LEFT JOIN (
         SELECT
             dp.package,
-            max(dp.version COLLATE vercomp) version
+            max_dpkgver(dp.version) version
         FROM
             dpkg_packages dp
             INNER JOIN dpkg_repos dr ON dr.name = dp.repo
@@ -865,7 +873,7 @@ FROM
     LEFT JOIN (
         SELECT
             package,
-            max(version COLLATE vercomp) version
+            max_dpkgver(version) version
         FROM
             dpkg_packages
         WHERE
@@ -879,7 +887,7 @@ FROM
     LEFT JOIN (
         SELECT
             dp.package,
-            max(dp.version COLLATE vercomp) version
+            max_dpkgver(dp.version) version
         FROM
             dpkg_packages dp
             INNER JOIN dpkg_repos dr ON dr.name = dp.repo

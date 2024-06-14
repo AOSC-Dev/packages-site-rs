@@ -262,10 +262,10 @@ pub async fn get_repo(repo: &str, db: &Ext) -> Result<Repo> {
     }
 }
 
-pub async fn db_last_modified(db: Ext) -> Result<i64> {
+pub async fn db_last_modified(db: Ext) -> Result<time::OffsetDateTime> {
     #[derive(Debug, FromRow)]
     struct CommitTime {
-        commit_time: i64,
+        commit_time: time::OffsetDateTime,
     }
 
     let res: Option<CommitTime> =
@@ -273,7 +273,7 @@ pub async fn db_last_modified(db: Ext) -> Result<i64> {
             .fetch_optional(&db.meta)
             .await?;
 
-    Ok(res.map(|t| t.commit_time).unwrap_or_default())
+    Ok(res.map(|t| t.commit_time).unwrap_or_else(time::OffsetDateTime::now_utc))
 }
 
 #[derive(FromRow, Debug, Clone, Serialize)]
@@ -283,14 +283,14 @@ pub struct Repo {
     pub realname: String,
     pub architecture: String,
     pub branch: String,
-    pub date: time::OffsetDateTime,
-    pub testing: i64,
+    pub date: i32,
+    pub testing: i32,
     pub category: String,
-    pub testingonly: i64,
-    pub pkgcount: i64,
-    pub ghost: i64,
-    pub lagging: i64,
-    pub missing: i64,
+    pub testingonly: bool,
+    pub pkgcount: i32,
+    pub ghost: i32,
+    pub lagging: i32,
+    pub missing: i32,
 }
 
 pub async fn db_repos(db: &Ext) -> Result<IndexMap<String, Repo>> {

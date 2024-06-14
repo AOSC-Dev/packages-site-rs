@@ -80,7 +80,7 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
     struct Package {
         branch: String,
         category: String,
-        commit_time: i64,
+        commit_time: time::OffsetDateTime,
         committer: String,
         description: String,
         directory: String,
@@ -98,7 +98,7 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
 
     #[derive(Serialize)]
     struct PkgList {
-        last_modified: i64,
+        last_modified: time::OffsetDateTime,
         packages: Vec<Package>,
     }
 

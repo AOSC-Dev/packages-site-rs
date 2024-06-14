@@ -53,6 +53,13 @@ pub fn strftime(datetime: &time::OffsetDateTime, s: &str) -> ::askama::Result<St
     }
 }
 
+pub fn strftime_i32(timestamp: &i32, s: &str) -> ::askama::Result<String> {
+    match time::OffsetDateTime::from_unix_timestamp(*timestamp as i64) {
+        Ok(datetime) => strftime(&datetime, s),
+        Err(e) => bail!("{}", e.to_string())
+    }
+}
+
 pub fn calc_color_ratio(ratio: &f64, max: &f64) -> ::askama::Result<f64> {
     Ok(100.0 - 100.0 / 3.0 * (*ratio) / (*max))
 }

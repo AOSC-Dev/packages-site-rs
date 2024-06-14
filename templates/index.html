@@ -49,7 +49,7 @@
   {%- endif %}
   {% for repo in repos -%}
     <tr class="repo-row{% if repo.testing != 0 -%} {{ " repo-testing" }} {%- else -%} {{""}} {%- endif %}">
-      {% if repo.testingonly != 0 -%}
+      {% if repo.testingonly -%}
       <td class="repo-name repo-name">{{ repo.name }}</td>
       {%- else if repo.testing != 0 -%}
       <td class="repo-name repo-name-testing">{{ repo.branch }}</td>
@@ -73,7 +73,7 @@
         {% endif %}
       </td>
       <td class="repo-date">
-        <time datetime="{{ repo.date|strftime("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{ repo.date|strftime("[year]-[month]-[day] [hour]:[minute]") }}</time>
+        <time datetime="{{ repo.date|strftime_i32("[year]-[month]-[day]T[hour]:[minute]:[second]") }}">{{ repo.date|strftime_i32("[year]-[month]-[day] [hour]:[minute]") }}</time>
       </td>
     </tr>
   {%- endfor %}
