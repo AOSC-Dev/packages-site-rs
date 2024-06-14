@@ -321,7 +321,7 @@ ORDER BY
 ";
 
 pub const SQL_GET_PACKAGE_NEW_LIST: &str = "
-SELECT
+SELECT DISTINCT ON (commit_time, name)
     name,
     dpkg.dpkg_version dpkg_version,
     description,
@@ -338,7 +338,7 @@ SELECT
         END,
         -2
     ) ver_compare,
-CASE
+    CASE
         WHEN error.package IS NOT NULL THEN 1
         ELSE CASE
             WHEN testing.package IS NOT NULL THEN 2
@@ -362,8 +362,6 @@ FROM
     ) error ON error.package = v_packages.name
 WHERE
     full_version IS NOT null
-GROUP BY
-    name, description, full_version, commit_time, dpkg_version, error.package, testing.package
 ORDER BY
     commit_time DESC,
     name ASC
@@ -372,7 +370,7 @@ LIMIT
 ";
 
 pub const SQL_GET_PACKAGE_NEW: &str = "
-SELECT
+SELECT DISTINCT ON (commit_time, name)
     name,
     description,
     full_version,
@@ -388,7 +386,7 @@ SELECT
         END,
         -2
     ) ver_compare,
-CASE
+    CASE
         WHEN error.package IS NOT NULL THEN 1
         ELSE CASE
             WHEN testing.package IS NOT NULL THEN 2
@@ -412,8 +410,6 @@ FROM
     ) error ON error.package = v_packages.name
 WHERE
     full_version IS NOT null
-GROUP BY
-    name, description, full_version, commit_time, dpkg_version, error.package, testing.package
 ORDER BY
     commit_time DESC,
     name ASC
