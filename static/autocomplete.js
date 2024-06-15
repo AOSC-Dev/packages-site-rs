@@ -153,6 +153,9 @@ var autoComplete = (function(){
         else if (key == 13 || key == 9) {
           var sel = that.sc.querySelector('.autocomplete-suggestion.selected');
           if (sel && that.sc.style.display != 'none') { o.onSelect(e, sel.getAttribute('data-val'), sel); setTimeout(function(){ that.sc.style.display = 'none'; }, 20); }
+          // firefox will automatically submit form in this case, overriding our
+          // behavior on `onSelect` so we prevent the default behavior here
+          e.preventDefault();
         }
       };
       addEvent(that, 'keydown', that.keydownHandler);
