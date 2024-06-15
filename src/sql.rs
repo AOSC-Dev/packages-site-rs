@@ -465,8 +465,8 @@ SELECT
     dep.dependency dependency,
     (coalesce(spabhost.value, '') = 'noarch') noarch,
     coalesce(spfailarch.value, '') fail_arch,
-    spsrc.key srctype,
-    spsrc.value srcurl,
+    coalesce(spsrc.key, '') srctype,
+    coalesce(spsrc.value, '') srcurl,
     v_packages.spec_path spec_path,
     EXISTS(
         SELECT
