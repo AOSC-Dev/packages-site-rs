@@ -55,7 +55,7 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
 
     if !query.get_noredir() {
         let q = q.trim().to_lowercase().replace([' ', '_'], "-");
-        let mut row = sqlx::query("SELECT 1 FROM packages WHERE name = ?")
+        let mut row = sqlx::query("SELECT 1 FROM packages WHERE name = $1")
             .bind(&q)
             .fetch_optional(&db.meta)
             .await?;
@@ -75,6 +75,8 @@ pub async fn search(_: Search, query: Query, db: Ext) -> Result<impl IntoRespons
     let qesc = q.to_string();
 
     let (packages, page): (Vec<Package>, _) = query_as(SQL_SEARCH_PACKAGES_DESC)
+        .bind(&qesc)
+        .bind(&qesc)
         .bind(&qesc)
         .bind(&qesc)
         .bind(&qesc)

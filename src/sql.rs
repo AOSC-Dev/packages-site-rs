@@ -273,20 +273,19 @@ FROM
         SELECT
             vp.name,
             vp.description,
-            highlight(fts_packages, 1, '<b>', '</b>') desc_highlight,
+            ts_headline('english', vp.description, to_tsquery($1)) desc_highlight,
             (
                 CASE
-                    WHEN vp.name = $1 THEN 1
-                    WHEN instr(vp.name, $2) = 0 THEN 3
+                    WHEN vp.name = $2 THEN 1
+                    WHEN position($3 in vp.name) = 0 THEN 3
                     ELSE 2
                 END
             ) matchcls,
-            bm25(fts_packages, 5, 1) ftrank
+            ts_rank(to_tsvector('english', name || ' ' || description), to_tsquery($4)) ftrank
         FROM
             packages vp
-            INNER JOIN fts_packages fp ON fp.name = vp.name
         WHERE
-            fts_packages MATCH $3
+            to_tsvector('english', name || ' ' || description) @@ to_tsquery($5)
         UNION
         ALL
         SELECT
@@ -297,12 +296,10 @@ FROM
             1.0 ftrank
         FROM
             v_packages vp
-            LEFT JOIN fts_packages fp ON fp.name = vp.name
-            AND fts_packages MATCH $4
         WHERE
-            vp.name LIKE ('%' || $5 || '%')
-            AND vp.name != $6
-            AND fp.name IS NULL
+            vp.name LIKE ('%' || $6 || '%')
+            AND vp.name != $7
+            AND NOT (to_tsvector('english', name || ' ' || description) @@ to_tsquery($8))
     ) q
     INNER JOIN v_packages vp ON vp.name = q.name
 ORDER BY
