@@ -459,7 +459,7 @@ SELECT
     full_version,
     commit_time,
     committer,
-    dep.dependency dependency,
+    coalesce(dep.dependency, '') dependency,
     (coalesce(spabhost.value, '') = 'noarch') noarch,
     coalesce(spfailarch.value, '') fail_arch,
     coalesce(spsrc.key, '') srctype,
