@@ -34,7 +34,7 @@ cargo build --release
 
 # 运行
 
-你需要先去参照 `abbs-meta-collector` 和 `dpkgrepo-meta` 把信息保存到 PostgreSQL 数据库中。如果你想运行 `Package Quality Assurance` 相关的页面，你需要参照 [`p-vector-rs`](http://github.com/AOSC-Dev/p-vector-rs) 生成对应的 PostgreSQL 数据库。
+你需要先去参照 `abbs-meta-collector` 和 `dpkgrepo-meta` 把信息保存到 PostgreSQL 数据库中，建议以 systemd timer 的形式自动定时运行。然后启动本项目：
 
 ```bash
 # run packages-site
