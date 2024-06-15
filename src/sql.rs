@@ -106,9 +106,10 @@ ORDER BY
 ";
 
 pub const SQL_GET_PACKAGE_LAGGING: &str = "
-SELECT * FROM (SELECT
+SELECT name, dpkg_version, full_version FROM (SELECT
     p.name AS name,
     dpkg.dpkg_version dpkg_version,
+    dpkg._vercomp dpkg_vercomp,
     (
         (
             CASE
@@ -138,7 +139,7 @@ WHERE
     )
     AND (coalesce(spabhost.value, '') = 'noarch') = (dpkg.architecture = 'noarch')) AS temp
 WHERE
-    comparable_dpkgver(dpkg_version) < comparable_dpkgver(full_version)
+    dpkg_vercomp < comparable_dpkgver(full_version)
 ORDER BY
     name
 ";
