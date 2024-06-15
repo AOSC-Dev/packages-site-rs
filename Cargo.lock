@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "abbs-meta-apml"
 version = "0.1.0"
-source = "git+https://github.com/AoSC-Dev/abbs-meta-rs#0bcf6553a2d4fbaa176d880bcca1d01e1e8b16b1"
+source = "git+https://github.com/AoSC-Dev/abbs-meta-rs#59fb161e8462ed6c5665bab4de05bc473b18004a"
 dependencies = [
  "aho-corasick",
  "annotate-snippets",
@@ -17,7 +17,7 @@ dependencies = [
 [[package]]
 name = "abbs-meta-tree"
 version = "0.1.0"
-source = "git+https://github.com/AoSC-Dev/abbs-meta-rs#0bcf6553a2d4fbaa176d880bcca1d01e1e8b16b1"
+source = "git+https://github.com/AoSC-Dev/abbs-meta-rs#59fb161e8462ed6c5665bab4de05bc473b18004a"
 dependencies = [
  "abbs-meta-apml",
  "anyhow",
@@ -1114,9 +1114,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.7.2"
+version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
+checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "mime"
