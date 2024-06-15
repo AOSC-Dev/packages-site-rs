@@ -569,7 +569,7 @@ pub const SQL_GET_PACKAGE_DEB_FILES: &str = r#"
 SELECT
     (
         CASE
-            WHEN path = '' THEN ''
+            WHEN path = '' OR path = '.' THEN ''
             ELSE '/' || path
         END
     ) || '/' || "name" filename,
