@@ -930,6 +930,9 @@ FROM
     v_so_breaks_dep
 WHERE
     dep_package = $1
+    AND package NOT LIKE '%+32'
+    AND package NOT LIKE 'gcc+cross-%'
+    AND package NOT IN ('cuda', 'latx', 'liblol')
 ORDER BY
     package
 ";
