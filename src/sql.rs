@@ -932,7 +932,7 @@ WHERE
     dep_package = $1
     AND package NOT LIKE '%+32'
     AND package NOT LIKE 'gcc+cross-%'
-    AND package NOT IN ('cuda', 'latx', 'liblol')
+    AND package NOT IN ('cuda', 'latx', 'liblol', 'dropbox', 'intel-oneapi-basekit')
 ORDER BY
     package
 ";
