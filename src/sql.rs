@@ -588,7 +588,7 @@ WHERE
     AND repo = $3
     AND ftype != 5
 ORDER BY
-    filename
+    path, name
 "#;
 
 pub const SQL_GET_PACKAGE_SODEP: &str = "
