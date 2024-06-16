@@ -922,3 +922,14 @@ ORDER BY
     package,
     architecture
 ";
+
+pub const SQL_GET_PACKAGE_LIBRARY_DEP: &str = "
+SELECT
+    package
+FROM
+    v_so_breaks_dep
+WHERE
+    dep_package = $1
+ORDER BY
+    package
+";

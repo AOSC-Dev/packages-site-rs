@@ -13,7 +13,6 @@
 <p><b class="pkg-field">Section</b>: {% if !category.is_empty() -%} {{"{}-"|format(category)}} {%- endif %}{{ section }}</p>
 {%- endif %}
 
-
 {% for dep in dependencies -%}
   <p>
     <b class="pkg-field pkg-dep-rel">{{ dep.relationship }}</b> {% if !dep.arch.is_empty() -%}{{dep.arch}}{%- endif %}:
@@ -23,6 +22,14 @@
     {%- endfor %}
 {%- endfor %}
 
+{% if !library_dependencies.is_empty() -%}
+  <p>
+    <b class="pkg-field pkg-dep-rel">Depends (library)</b>:
+    {% for name in library_dependencies -%}
+    {% if loop.index != 1 -%},{%- endif %}
+    <span class="pkg-dep"><a href="{{ name }}">{{ name }}</a></span>
+    {%- endfor %}
+{%- endif %}
 
 <p><b class="pkg-field">Links</b>:
 <a href="/changelog/{{ name|urlencode }}">Changelog</a>,

@@ -107,6 +107,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         category: &'a String,
         section: &'a String,
         dependencies: Vec<Dependency>,
+        library_dependencies: Vec<String>,
         errors: Vec<PackageError>,
         hasrevdep: bool,
         srctype: String,
@@ -347,6 +348,11 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         None => ("".into(), "".into(), "".into()),
     };
 
+    let library_deps: Vec<(String,)> = query_as(SQL_GET_PACKAGE_LIBRARY_DEP)
+        .bind(&name)
+        .fetch_all(&db.pv)
+        .await?;
+
     let ctx = Template {
         // package
         pkg: &pkg,
@@ -361,6 +367,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
 
         // dependencies
         dependencies: Dependency::parse_db_dependencies(&pkg.dependency),
+        library_dependencies: library_deps.into_iter().map(|dep| dep.0).collect(),
 
         // errors
         errors,
