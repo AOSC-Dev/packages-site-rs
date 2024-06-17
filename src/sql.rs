@@ -110,19 +110,7 @@ SELECT name, dpkg_version, full_version FROM (SELECT
     p.name AS name,
     dpkg.dpkg_version dpkg_version,
     dpkg._vercomp dpkg_vercomp,
-    (
-        (
-            CASE
-                WHEN coalesce(pv.epoch, '') = '' THEN ''
-                ELSE pv.epoch || ':'
-            END
-        ) || pv.version || (
-            CASE
-                WHEN coalesce(pv.release, '') IN ('', '0') THEN ''
-                ELSE '-' || pv.release
-            END
-        )
-    ) full_version
+    pv.full_version full_version
 FROM
     packages p
     LEFT JOIN package_spec spabhost ON spabhost.package = p.name
