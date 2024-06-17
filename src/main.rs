@@ -11,11 +11,13 @@ use axum_extra::routing::RouterExt;
 use config::Config;
 use hyper::Server;
 use hyperlocal::UnixServerExt;
+use opentelemetry_otlp::WithExportConfig;
 use std::sync::Arc;
 use structopt::StructOpt;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
+use tracing_subscriber::prelude::*;
 use utils::fallback;
 use views::*;
 
@@ -33,13 +35,40 @@ struct Opt {
 async fn main() -> Result<()> {
     let opt = Opt::from_args();
     let config = Config::from_file(opt.config)?;
-    tracing_subscriber::fmt()
-        .with_env_filter(format!(
-            "tower_http::trace=trace,packages_site={log},sqlx::query={sqlx_log}",
-            log = config.global.log,
-            sqlx_log = config.global.sqlx_log
-        ))
-        .init();
+
+    let subscriber = tracing_subscriber::Registry::default();
+    let env_filter = tracing_subscriber::EnvFilter::new(format!(
+        "tower_http::trace=trace,packages_site={log},sqlx::query={sqlx_log}",
+        log = config.global.log,
+        sqlx_log = config.global.sqlx_log
+    ));
+    if let Some(otlp_url) = &config.global.otlp_url {
+        // setup otlp
+        let exporter = opentelemetry_otlp::new_exporter().http().with_endpoint(otlp_url);
+        let otlp_tracer = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_trace_config(
+                opentelemetry_sdk::trace::config().with_resource(opentelemetry_sdk::Resource::new(vec![
+                    opentelemetry::KeyValue::new("service.name", "packages-site"),
+                ])),
+            )
+            .with_exporter(exporter)
+            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+
+        // let tracing crate output to opentelemetry
+        let tracing_leyer = tracing_opentelemetry::layer().with_tracer(otlp_tracer);
+        subscriber
+            .with(env_filter)
+            .with(tracing_leyer)
+            .with(tracing_subscriber::fmt::Layer::default())
+            .init();
+    } else {
+        // fallback to stdout
+        subscriber
+            .with(env_filter)
+            .with(tracing_subscriber::fmt::Layer::default())
+            .init();
+    }
 
     let db = Arc::new(db::Db::open(&config).await?);
 

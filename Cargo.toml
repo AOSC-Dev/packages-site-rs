@@ -42,6 +42,11 @@ proc-macro-regex = "^1"
 structopt = "0.3"
 hyper = "0.14"
 hyperlocal = "0.8"
+opentelemetry-otlp = { version = "0.15.0", features = ["http-proto", "reqwest-client"] }
+opentelemetry = "0.22.0"
+tracing-opentelemetry = "0.23.0"
+opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio"] }
+reqwest = "0.11.24"
 
 [profile.dev.package.askama_derive]
 opt-level = 3

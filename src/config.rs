@@ -18,6 +18,8 @@ pub struct Global {
     pub listen: String,
     pub log: String,
     pub sqlx_log: String,
+    /// OpenTelemetry url
+    pub otlp_url: Option<String>,
 }
 
 impl Config {
