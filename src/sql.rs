@@ -164,9 +164,9 @@ SELECT
     coalesce(
         CASE
             WHEN dpkg.dpkg_version IS NOT null THEN (CASE WHEN
-                comparable_dpkgver(dpkg.dpkg_version) > comparable_dpkgver(p.full_version)
+                dpkg._vercomp > comparable_dpkgver(p.full_version)
             THEN 1 ELSE 0 END) - (CASE WHEN
-                comparable_dpkgver(dpkg.dpkg_version) < comparable_dpkgver(p.full_version)
+                dpkg._vercomp < comparable_dpkgver(p.full_version)
             THEN 1 ELSE 0 END)
             ELSE -1
         END,
@@ -320,9 +320,9 @@ SELECT DISTINCT ON (commit_time, name)
     coalesce(
         CASE
             WHEN dpkg_version IS NOT null THEN (CASE WHEN
-                comparable_dpkgver(dpkg_version) > comparable_dpkgver(full_version)
+                dpkg._vercomp > comparable_dpkgver(full_version)
             THEN 1 ELSE 0 END) - (CASE WHEN
-                comparable_dpkgver(dpkg_version) < comparable_dpkgver(full_version)
+                dpkg._vercomp < comparable_dpkgver(full_version)
             THEN 1 ELSE 0 END)
             ELSE -1
         END,
@@ -369,9 +369,9 @@ SELECT
     coalesce(
         CASE
             WHEN dpkg.dpkg_version IS NOT null THEN (CASE WHEN
-                comparable_dpkgver(dpkg.dpkg_version) > comparable_dpkgver(full_version)
+                dpkg._vercomp > comparable_dpkgver(full_version)
             THEN 1 ELSE 0 END) - (CASE WHEN
-                comparable_dpkgver(dpkg.dpkg_version) < comparable_dpkgver(full_version)
+                dpkg._vercomp < comparable_dpkgver(full_version)
             THEN 1 ELSE 0 END)
             ELSE -1
         END,
@@ -515,7 +515,7 @@ WHERE
     package = $1
 ORDER BY
     dr.realname ASC,
-    comparable_dpkgver(version) DESC,
+    _vercomp DESC,
     testing DESC
 ";
 
