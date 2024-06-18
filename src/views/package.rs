@@ -90,7 +90,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
 
     #[derive(FromRow)]
     struct PackageTesting {
-        pub version: String,
+        pub full_version: String,
         pub tree: String,
         pub branch: String,
         pub spec_path: String,
@@ -151,26 +151,26 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         .fetch_all(&db.meta)
         .await?;
     let mut testing_ver_count = HashMap::new();
-    testing_vers.iter().for_each(|PackageTesting { version, .. }| {
+    testing_vers.iter().for_each(|PackageTesting { full_version, .. }| {
         testing_ver_count
-            .entry(version.clone())
+            .entry(full_version.clone())
             .and_modify(|e| *e += 1)
             .or_insert(1);
     });
     let testing_vers: HashMap<_, _> = testing_vers
         .into_iter()
         .map(|testing| {
-            let version = if testing_ver_count[&testing.version] >= 2 {
-                let version = &testing.version;
+            let full_version = if testing_ver_count[&testing.full_version] >= 2 {
+                let version = &testing.full_version;
                 let branch = testing
                     .branch
                     .strip_prefix("origin/")
                     .unwrap_or(testing.branch.as_str());
                 format!("{version}-{branch}")
             } else {
-                testing.version.clone()
+                testing.full_version.clone()
             };
-            (version, testing)
+            (full_version, testing)
         })
         .collect();
 

@@ -1,6 +1,6 @@
 pub const SQL_GET_PACKAGE_TESTING: &str = "
 SELECT
-    version,
+    full_version,
     spec_path,
     tree,
     branch
