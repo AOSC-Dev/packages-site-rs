@@ -142,44 +142,6 @@ pub async fn fallback(uri: Uri) -> impl IntoResponse {
     crate::utils::Error::NotFound(format!("No route for {}", uri))
 }
 
-pub fn issue_code(code: i32) -> Option<&'static str> {
-    match code {
-        100 => Some("Metadata"),
-        101 => Some("Syntax error(s) in spec"),
-        102 => Some("Syntax error(s) in defines"),
-        103 => Some("Package name is not valid"),
-        111 => Some("Package may be out-dated"),
-        112 => Some("SRCTBL uses HTTP"),
-        121 => Some("The last commit message was badly formatted"),
-        122 => Some("Multiple packages changed in the last commit"),
-        123 => Some("Force-pushed recently (last N commit - TBD)"),
-        200 => Some("Build Process"),
-        201 => Some("Failed to get source"),
-        202 => Some("Failed to get dependencies"),
-        211 => Some("Failed to build from source (FTBFS)"),
-        221 => Some("Failed to launch packaged executable(s)"),
-        222 => Some("Feature(s) non-functional, or unit test(s) failed"),
-        300 => Some("Payload (.deb Package)"),
-        301 => Some("Bad or corrupted .deb file"),
-        302 => Some(".deb file too small"),
-        303 => Some("Bad .deb filename or storage path"),
-        311 => Some("Bad .deb Maintainer metadata"),
-        321 => Some("File(s) stored in unexpected path(s) in .deb"),
-        322 => Some("Zero-byte file(s) found in .deb"),
-        323 => Some("File(s) with bad owner/group found in .deb"),
-        324 => Some("File(s) with bad permission found in .deb"),
-        400 => Some("Dependencies"),
-        401 => Some("BUILDDEP unmet"),
-        402 => Some("Duplicate package in tree"),
-        411 => Some("PKGDEP unmet"),
-        412 => Some("Duplicate package in repository"),
-        421 => Some("File collision(s)"),
-        431 => Some("Library version (sover) dependency unmet"),
-        432 => Some("Library dependency without PKGDEP"),
-        _ => None,
-    }
-}
-
 pub type Query = QueryExtractor;
 
 #[derive(Deserialize, Debug, Clone, Default)]
@@ -447,19 +409,6 @@ impl std::fmt::Display for SrcType {
         write!(f, "{s}")
     }
 }
-
-macro_rules! skip_none {
-    ($res:expr) => {
-        match $res {
-            Some(val) => val,
-            None => {
-                tracing::debug!("skip none");
-                continue;
-            }
-        }
-    };
-}
-pub(crate) use skip_none;
 
 pub const REPO_CAT: [(&str, &str); 3] = [("base", ""), ("bsp", "BSP"), ("overlay", "Overlay")];
 const DEP_REL: [(&str, &str); 8] = [
