@@ -1,8 +1,8 @@
 [global]
-listen = "0.0.0.0:3000"
+listen = "unix:/var/packagesite/site/server.sock"
 log = "info" # general logging level
 sqlx_log = "info" # sqlx logging level. Set to `info` or `debug` to get SQL query which has executed
 
 [db]
-pv_conn = "postgresql:///" # postgres connection to db provided by p-vector-rs
-meta_conn = "postgresql:///" # postgres connection to db provided by abbs-meta-collector and dpkgrepo-meta
+pv_conn = "postgresql:///packages" # postgres connection to db provided by p-vector-rs
+meta_conn = "postgresql:///packagesite" # postgres connection to db provided by abbs-meta-collector and dpkgrepo-meta
