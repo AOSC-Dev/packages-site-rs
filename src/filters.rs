@@ -1,6 +1,4 @@
-use crate::utils::{issue_code, ver_rel};
-use itertools::Itertools;
-use serde_json::Value;
+use crate::utils::ver_rel;
 use std::fmt::Display;
 
 macro_rules! bail {
@@ -58,10 +56,6 @@ pub fn strftime_i32(timestamp: &i32, s: &str) -> ::askama::Result<String> {
     }
 }
 
-pub fn calc_color_ratio(ratio: &f64, max: &f64) -> ::askama::Result<f64> {
-    Ok(100.0 - 100.0 / 3.0 * (*ratio) / (*max))
-}
-
 pub fn sizeof_fmt(size: &i64) -> ::askama::Result<String> {
     let size = size::Size::from_bytes(*size);
     Ok(size.to_string())
@@ -78,10 +72,6 @@ pub fn fmt_pkg_status(status: &i32) -> ::askama::Result<&'static str> {
         2 => "testing",
         _ => "unknown",
     })
-}
-
-pub fn fmt_issue_code(code: &i32) -> ::askama::Result<&'static str> {
-    Ok(issue_code(*code).unwrap_or("unknown"))
 }
 
 pub fn sizeof_fmt_ls(num: &i64) -> ::askama::Result<String> {
@@ -123,76 +113,10 @@ pub fn ls_perm(perm: &i32, ftype: &i16) -> ::askama::Result<String> {
     Ok(format!("{ftype}{perm}"))
 }
 
-pub fn ls_perm_str(perm: &i32, ftype: &str) -> ::askama::Result<String> {
-    let ftype = match ftype {
-        "lnk" => 'l',
-        "sock" => 's',
-        "chr" => 'c',
-        "blk" => 'b',
-        "dir" => 'd',
-        "fifo" => 'p',
-        _ => '-',
-    };
-
-    let perm: String = format!("{perm:b}")
-        .chars()
-        .zip("rwxrwxrwx".chars())
-        .map(|(a, b)| if a == '1' { b } else { '-' })
-        .collect();
-
-    Ok(format!("{ftype}{perm}"))
-}
-
 pub fn fmt_default<T: Display + Default>(x: &Option<T>) -> ::askama::Result<String> {
     if let Some(x) = x {
         Ok(format!("{x}"))
     } else {
         Ok(format!("{}", T::default()))
     }
-}
-
-/// get json value and convert it to string
-pub fn value_string(json: &Value, key: &str) -> ::askama::Result<String> {
-    Ok(json
-        .get(key)
-        .map(|v| v.as_str().map(|s| s.to_string()).unwrap_or_default())
-        .unwrap_or_default())
-}
-
-pub fn value_array_string(json: &Value, key: &str) -> ::askama::Result<Vec<String>> {
-    Ok(json
-        .get(key)
-        .map(|v| {
-            v.as_array()
-                .map(|v| {
-                    v.iter()
-                        .map(|v| v.as_str().unwrap_or_default().to_string())
-                        .collect_vec()
-                })
-                .unwrap_or_default()
-        })
-        .unwrap_or_default())
-}
-
-pub fn len<T>(v: &Vec<T>) -> ::askama::Result<usize> {
-    Ok(v.len())
-}
-pub fn value_array<'a>(json: &'a Value, key: &'a str) -> ::askama::Result<&'a Vec<serde_json::Value>> {
-    if let Some(v) = json.get(key) {
-        if let Some(v) = v.as_array() {
-            Ok(v)
-        } else {
-            bail!("value `{v:?}` is not array type")
-        }
-    } else {
-        bail!("no such key `{key}` in {json:?}")
-    }
-}
-
-pub fn value_i64(json: &Value, key: &str) -> ::askama::Result<i64> {
-    Ok(json.get(key).map(|v| v.as_i64().unwrap_or(0)).unwrap_or(0))
-}
-
-pub fn value_i32(json: &Value, key: &str) -> ::askama::Result<i32> {
-    Ok(json.get(key).map(|v| v.as_i64().unwrap_or(0) as i32).unwrap_or(0))
 }

@@ -36,7 +36,6 @@
 {% if hasrevdep -%}
 <a href="/revdep/{{ name|urlencode }}">Reverse dependency</a>,
 {%- endif %}
-<a href="/qa/packages/{{ name|urlencode }}">QA Page</a>,
 <a href="https://github.com/AOSC-Dev/{{ tree }}/issues/new?template=bug-report.md&title={{ name|urlencode }}%3A%20">Report issues</a></p>
 
 {% if !srctype.is_empty() -%}

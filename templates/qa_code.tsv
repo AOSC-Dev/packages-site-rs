@@ -1,4 +1,0 @@
-Package	Versions	Branches	File	File count
-{% for pkg in packages -%}
-{{ pkg.name }}	{{ pkg.versions|join(",") }}	{{ pkg.branches|join(",") }}	{{ pkg.filename|fmt_default }}	{{ pkg.filecount }}
-{% endfor %}
