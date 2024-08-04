@@ -85,7 +85,7 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
         description: String,
         directory: String,
         dpkg_availrepos: String,
-        dpkg_version: String,
+        dpkg_version: Option<String>,
         full_version: String,
         name: String,
         pkg_section: String,

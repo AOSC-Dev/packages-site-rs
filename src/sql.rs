@@ -164,7 +164,10 @@ FROM
     v_packages p
     LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = p.name
 GROUP BY
-    name
+    name, tree, tree_category, p.branch, category,
+    section, pkg_section, directory, description,
+    version, full_version, commit_time, committer,
+    dpkg.dpkg_version, dpkg._vercomp
 ORDER BY
     name
 ";
