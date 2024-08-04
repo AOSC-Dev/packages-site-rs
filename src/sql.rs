@@ -148,7 +148,7 @@ SELECT
     p.commit_time,
     p.committer,
     dpkg.dpkg_version dpkg_version,
-    group_concat(DISTINCT dpkg.reponame) dpkg_availrepos,
+    array_to_string(array_agg(DISTINCT dpkg.reponame), ',') dpkg_availrepos,
     coalesce(
         CASE
             WHEN dpkg.dpkg_version IS NOT null THEN (CASE WHEN
