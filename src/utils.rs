@@ -390,7 +390,7 @@ impl Src {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize)]
 pub enum SrcType {
     Git,
     Tarball,
