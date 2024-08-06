@@ -96,6 +96,10 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
         version: String,
         raw_srctype: String,
         raw_srcurl: String,
+        #[sqlx(skip)]
+        srcurl: String,
+        #[sqlx(skip)]
+        srctype: Option<SrcType>,
     }
 
     #[derive(Serialize)]
@@ -104,7 +108,14 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
         packages: Vec<Package>,
     }
 
-    let packages: Vec<Package> = query_as(SQL_GET_PACKAGE_LIST).fetch_all(&db.meta).await?;
+    let mut packages: Vec<Package> = query_as(SQL_GET_PACKAGE_LIST).fetch_all(&db.meta).await?;
+
+    for pkg in packages.iter_mut() {
+        if let Some(src) = Src::parse(&pkg.raw_srctype, &pkg.raw_srcurl) {
+            pkg.srctype = Some(src.srctype);
+            pkg.srcurl = src.srcurl;
+        }
+    }
 
     let res = PkgList {
         last_modified: db_last_modified(db).await?,
