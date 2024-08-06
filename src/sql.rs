@@ -147,6 +147,8 @@ SELECT
     p.full_version,
     p.commit_time,
     p.committer,
+    coalesce(spsrc.key, '') raw_srctype,
+    coalesce(spsrc.value, '') raw_srcurl,
     dpkg.dpkg_version dpkg_version,
     array_to_string(array_agg(DISTINCT dpkg.reponame), ',') dpkg_availrepos,
     coalesce(

@@ -94,6 +94,8 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
         tree_category: String,
         ver_compare: i32,
         version: String,
+        raw_srctype: String,
+        raw_srcurl: String,
     }
 
     #[derive(Serialize)]
