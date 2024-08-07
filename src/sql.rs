@@ -165,11 +165,14 @@ SELECT
 FROM
     v_packages p
     LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = p.name
+    LEFT JOIN package_spec spsrc ON spsrc.package = p.name
+    AND spsrc.key IN ('SRCTBL', 'GITSRC', 'SVNSRC', 'BZRSRC', 'SRCS')
 GROUP BY
     name, tree, tree_category, p.branch, category,
     section, pkg_section, directory, description,
     version, full_version, commit_time, committer,
-    dpkg.dpkg_version, dpkg._vercomp
+    dpkg.dpkg_version, dpkg._vercomp,
+    spsrc.key, spsrc.value
 ORDER BY
     name
 ";
