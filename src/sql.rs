@@ -347,7 +347,7 @@ FROM
             package_errors
     ) error ON error.package = v_packages.name
 WHERE
-    full_version IS NOT null
+    full_version IS NOT NULL and dpkg_version IS NOT NULL
 ORDER BY
     commit_time DESC,
     name ASC
