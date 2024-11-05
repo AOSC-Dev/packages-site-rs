@@ -487,11 +487,11 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
             if let Some(deps) = deps_map.get(&relationship.to_string()) {
                 let mut res = vec![];
                 for (_, pkggroup) in &deps.iter().group_by(|dep| &dep.package) {
-                    let mut iter = pkggroup;
-                    if let Some(dep) = iter.find(|dep| dep.architecture.is_empty()) {
-                        res.push(dep);
+                    let mut pkggroup = pkggroup.collect_vec();
+                    if let Some(dep) = pkggroup.iter().find(|dep| dep.architecture.is_empty()) {
+                        res.push(*dep);
                     } else {
-                        res.append(&mut iter.collect_vec());
+                        res.append(&mut pkggroup);
                     }
                 }
                 Some(TemplateRevDep { description, deps: res })
