@@ -783,7 +783,7 @@ FROM
     pv_package_sodep s
 INNER JOIN (
     SELECT
-        p.name, p.ver
+        p.package, p.name, p.ver
     FROM
         pv_package_sodep p
     INNER JOIN
@@ -799,6 +799,7 @@ INNER JOIN (
 ON
     s.name = n.name
     AND s.ver = n.ver
+    AND s.package <> n.package
 WHERE
     s.depends = 1
 ORDER BY
