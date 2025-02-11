@@ -9,4 +9,7 @@ SOBREAK	{{ outer }}	{{ package }}
 {% endfor %}{% endfor %}{% if !sobreaks_circular.is_empty() -%}
 {% for package in sobreaks_circular -%}
 SOBREAK		{{ package }}	
-{% endfor %}{% endif %}{% endif %}
+{% endfor %}{% endif %}{% endif %}{% if !sorevdeps.is_empty() -%}
+{% for library in sorevdeps.keys() -%}{% for package in sorevdeps.get(library.as_str()).unwrap() -%}
+SOREVDEP	{{ library }}	{{ package }}	
+{% endfor %}{% endfor %}{% endif %}

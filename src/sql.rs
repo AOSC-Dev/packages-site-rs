@@ -775,3 +775,32 @@ WHERE
 ORDER BY
     package
 ";
+
+pub const SQL_GET_PACKAGE_SO_REVDEPS: &str = "
+SELECT
+    DISTINCT s.name, s.package
+FROM
+    pv_package_sodep s
+INNER JOIN (
+    SELECT
+        p.name, p.ver
+    FROM
+        pv_package_sodep p
+    INNER JOIN
+        v_packages_new n
+    ON
+        p.package = n.package
+        AND p.version = n.version
+    WHERE
+        p.package = $1
+        AND p.depends = 0
+        AND p.ver IS NOT NULL
+) n
+ON
+    s.name = n.name
+    AND s.ver = n.ver
+WHERE
+    s.depends = 1
+ORDER BY
+    s.name, s.package
+";

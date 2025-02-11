@@ -453,6 +453,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         revdeps: &'a Vec<TemplateRevDep<'a>>,
         sobreaks: &'a Vec<Vec<String>>,
         sobreaks_circular: &'a Vec<String>,
+        sorevdeps: &'a HashMap<String, Vec<String>>,
     }
 
     #[derive(Debug, Template, Serialize)]
@@ -461,6 +462,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         revdeps: &'a Vec<TemplateRevDep<'a>>,
         sobreaks: &'a Vec<Vec<String>>,
         sobreaks_circular: &'a Vec<String>,
+        sorevdeps: &'a HashMap<String, Vec<String>>,
     }
 
     #[derive(Debug, FromRow)]
@@ -545,17 +547,29 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 
     let (ref sobreaks, ref sobreaks_circular) = toposort(sobreaks);
 
+    let sorevdeps: Vec<(String, String)> = query_as(SQL_GET_PACKAGE_SO_REVDEPS)
+        .bind(&name)
+        .fetch_all(&db.pv)
+        .await?;
+
+    let mut sorevdeps_grouped: HashMap<String, Vec<String>> = HashMap::new();
+    for (k, v) in sorevdeps {
+        sorevdeps_grouped.entry(k).or_insert_with(Vec::new).push(v);
+    }
+
     let ctx = Template {
         name: &name,
         revdeps,
         sobreaks,
         sobreaks_circular,
+        sorevdeps: &sorevdeps_grouped,
     };
 
     let ctx_tsv = TemplateTsv {
         revdeps,
         sobreaks,
         sobreaks_circular,
+        sorevdeps: &sorevdeps_grouped,
     };
 
     render(ctx, Some(ctx_tsv), &q)

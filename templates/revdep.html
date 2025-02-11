@@ -36,4 +36,16 @@
 </ul>
 {% endif %}
 
+{% if !sorevdeps.is_empty() -%}<p><b class="pkg-field">Reverse dependencies of
+    the libraries</b>:
+<ul>{% for library in sorevdeps.keys() -%}
+    <li>{{ library }}:
+        {% for package in sorevdeps.get(library.as_str()).unwrap() -%}
+        {% if loop.index != 1 %},{% endif %}
+        <span class="pkg-dep"><a href="{{ package }}">{{ package }}</a></span>
+        {%- endfor %}
+    </li>{%- endfor %}
+</ul>
+{% endif %}
+
 {% endblock main %}
