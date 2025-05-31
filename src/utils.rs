@@ -367,6 +367,7 @@ impl Src {
                     "svn" => SrcType::SvnSrc,
                     "tbl" => SrcType::Tarball,
                     "bzr" => SrcType::BzrSrc,
+                    "pypi" => SrcType::Pypi,
                     _ => return None,
                 };
 
@@ -396,6 +397,7 @@ pub enum SrcType {
     Tarball,
     SvnSrc,
     BzrSrc,
+    Pypi,
 }
 
 impl std::fmt::Display for SrcType {
@@ -405,6 +407,7 @@ impl std::fmt::Display for SrcType {
             SrcType::Tarball => "tarball",
             SrcType::SvnSrc => "Subversion",
             SrcType::BzrSrc => "Bazaar",
+            SrcType::Pypi => "PyPI",
         };
         write!(f, "{s}")
     }
@@ -429,5 +432,5 @@ pub const DEP_REL_REV: [(&str, &str); 4] = [
 ];
 
 regex!(pub regex_srchost r"^https://(github\.com|bitbucket\.org|gitlab\.com)");
-regex!(pub regex_pypi r"^https?://pypi\.(python\.org|io)");
-regex!(pub regex_pypisrc r"^https?://pypi\.(python\.org|io)/packages/source/");
+regex!(pub regex_pypi r"^https?://pypi\.(python\.org|io|org)");
+regex!(pub regex_pypisrc r"^https?://pypi\.(python\.org|io|org)/packages/source/");
