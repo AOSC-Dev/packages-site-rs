@@ -331,7 +331,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
                     };
 
                     pypiname
-                        .map(|pypiname| format!("https://pypi.python.org/pypi/{pypiname}/"))
+                        .map(|pypiname| format!("https://pypi.org/project/{pypiname}/"))
                         .unwrap_or_default()
                 }
                 _ => match srctype {
@@ -340,6 +340,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
                         .strip_prefix("git://")
                         .map(|stripped| format!("http://{stripped}"))
                         .unwrap_or_else(|| srcurl.clone()),
+                    SrcType::Pypi => format!("https://pypi.org/project/{srcurl}/"),
                     _ => "".into(),
                 },
             };
