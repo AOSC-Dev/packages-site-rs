@@ -286,6 +286,7 @@ li {
   border-width: 0 0 1.5px;
   border-style: solid;
   outline: 0;
+  box-sizing: border-box;
 }
 
 #searchinput:focus {
