@@ -34,7 +34,7 @@ cargo build --release
 
 # 运行
 
-你需要先去参照 `abbs-meta-collector` 和 `dpkgrepo-meta` 把信息保存到 PostgreSQL 数据库中，建议以 systemd timer 的形式自动定时运行。然后启动本项目：
+你需要先去参照 [abbs-meta-collector](https://github.com/AOSC-Dev/abbs-meta-collector) 和 [dpkgrepo-meta](https://github.com/AOSC-Dev/dpkgrepo-meta) 把信息保存到 PostgreSQL 数据库中，建议以 systemd timer 的形式自动定时运行。然后启动本项目：
 
 ```bash
 # run packages-site
