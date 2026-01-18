@@ -419,10 +419,6 @@ li {
   background-color: hsl(185, 100%, 77%);
 }
 
-.pkg-status-error {
-  background-color: #E87A90;
-}
-
 .legend {
   border: none;
 }

@@ -10,20 +10,6 @@ WHERE
     package = $1
 ";
 
-pub const SQL_GET_PACKAGE_ERRORS: &str = "
-SELECT
-    message,
-    path,
-    tree,
-    branch,
-    line,
-    col
-FROM
-    package_errors
-WHERE
-    package = $1
-";
-
 pub const SQL_GET_PACKAGE_CHANGELOG: &str = "
 SELECT
     package,
@@ -325,11 +311,8 @@ SELECT DISTINCT ON (commit_time, name)
         -2
     ) ver_compare,
     CASE
-        WHEN error.package IS NOT NULL THEN 1
-        ELSE CASE
-            WHEN testing.package IS NOT NULL THEN 2
-            ELSE 0
-        END
+        WHEN testing.package IS NOT NULL THEN 2
+        ELSE 0
     END AS status
 FROM
     v_packages
@@ -340,12 +323,6 @@ FROM
         FROM
             package_testing
     ) testing ON testing.package = v_packages.name
-    LEFT JOIN (
-        SELECT
-            DISTINCT package
-        FROM
-            package_errors
-    ) error ON error.package = v_packages.name
 WHERE
     full_version IS NOT NULL and dpkg_version IS NOT NULL
 ORDER BY
@@ -374,11 +351,8 @@ SELECT
         -2
     ) ver_compare,
     CASE
-        WHEN error.package IS NOT NULL THEN 1
-        ELSE CASE
-            WHEN testing.package IS NOT NULL THEN 2
-            ELSE 0
-        END
+        WHEN testing.package IS NOT NULL THEN 2
+        ELSE 0
     END AS status
 FROM
     v_packages
@@ -389,12 +363,6 @@ FROM
         FROM
             package_testing
     ) testing ON testing.package = v_packages.name
-    LEFT JOIN (
-        SELECT
-            DISTINCT package
-        FROM
-            package_errors
-    ) error ON error.package = v_packages.name
 WHERE
     full_version IS NOT null
 ORDER BY
@@ -411,11 +379,8 @@ SELECT
     dpkg.dpkg_version dpkg_version,
     p.description description,
     CASE
-        WHEN error.package IS NOT NULL THEN 1
-        ELSE CASE
-            WHEN testing.package IS NOT NULL THEN 2
-            ELSE 0
-        END
+        WHEN testing.package IS NOT NULL THEN 2
+        ELSE 0
     END AS status
 FROM
     v_packages p
@@ -425,12 +390,6 @@ FROM
         FROM
             package_testing
     ) testing ON testing.package = p.name
-    LEFT JOIN (
-        SELECT
-            DISTINCT package
-        FROM
-            package_errors
-    ) error ON error.package = p.name
     LEFT JOIN package_spec spabhost ON spabhost.package = p.name
     AND spabhost.key = 'ABHOST'
     LEFT JOIN v_dpkg_packages_new dpkg ON dpkg.package = p.name

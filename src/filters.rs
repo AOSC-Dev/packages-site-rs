@@ -68,7 +68,6 @@ pub fn fmt_ver_compare(ver_compare: &i32) -> ::askama::Result<&'static str> {
 pub fn fmt_pkg_status(status: &i32) -> ::askama::Result<&'static str> {
     Ok(match *status {
         0 => "normal",
-        1 => "error",
         2 => "testing",
         _ => "unknown",
     })

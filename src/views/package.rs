@@ -78,16 +78,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         fullver: String,
     }
 
-    #[derive(FromRow, Serialize, Debug)]
-    struct PackageError {
-        message: String,
-        path: String,
-        tree: String,
-        branch: String,
-        col: Option<i32>,
-        line: Option<i32>,
-    }
-
     #[derive(FromRow)]
     struct PackageTesting {
         pub full_version: String,
@@ -108,7 +98,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         section: &'a String,
         dependencies: Vec<Dependency>,
         library_dependencies: Vec<String>,
-        errors: Vec<PackageError>,
         hasrevdep: bool,
         srctype: String,
         srcurl_base: String,
@@ -137,9 +126,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     } else {
         not_found!("Package \"{name}\" not found");
     };
-
-    // collect package error messages
-    let errors: Vec<PackageError> = query_as(SQL_GET_PACKAGE_ERRORS).bind(&name).fetch_all(&db.meta).await?;
 
     // Generate version matrix
 
@@ -369,9 +355,6 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         // dependencies
         dependencies: Dependency::parse_db_dependencies(&pkg.dependency),
         library_dependencies: library_deps.into_iter().map(|dep| dep.0).collect(),
-
-        // errors
-        errors,
 
         // dpkg_matrix
         versions,
