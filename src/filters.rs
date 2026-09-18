@@ -7,40 +7,51 @@ macro_rules! bail {
     };
 }
 
-pub fn d<'a>(s: &'a str, default: &'a str, _: bool) -> ::askama::Result<&'a str> {
+#[askama::filter_fn]
+pub fn d(s: &str, _: &dyn askama::Values, default: &str, consider_empty: bool) -> ::askama::Result<String> {
+    let _ = consider_empty;
     if !s.is_empty() {
-        Ok(s)
+        Ok(s.to_string())
     } else {
-        Ok(default)
+        Ok(default.to_string())
     }
 }
 
-pub fn fmt_timestamp(timestamp: &time::OffsetDateTime) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn fmt_timestamp(timestamp: &time::OffsetDateTime, _: &dyn askama::Values) -> ::askama::Result<String> {
     if let Ok(date) = timestamp.format(&time::format_description::well_known::Rfc2822) {
         return Ok(date);
     }
     bail!("cannot format timestamp {timestamp} into RFC2822 format")
 }
 
-pub fn cut(s: &str, len: usize) -> ::askama::Result<&str> {
+#[askama::filter_fn]
+pub fn cut(s: &str, _: &dyn askama::Values, len: usize) -> ::askama::Result<String> {
     if s.len() <= len {
-        Ok(s)
+        Ok(s.to_string())
     } else {
-        Ok(&s[..len])
+        Ok(s[..len].to_string())
     }
 }
 
-pub fn fill(s: &str, width: usize, subsequent_indent: &str) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn fill<S: AsRef<str>>(
+    s: S,
+    _: &dyn askama::Values,
+    width: usize,
+    subsequent_indent: &str,
+) -> ::askama::Result<String> {
     let opt = textwrap::Options::new(width).subsequent_indent(subsequent_indent);
-    Ok(textwrap::fill(s, opt))
+    Ok(textwrap::fill(s.as_ref(), opt))
 }
 
-pub fn get_first_line(s: &str) -> ::askama::Result<&str> {
-    Ok(s.lines().next().unwrap_or(""))
+#[askama::filter_fn]
+pub fn get_first_line(s: &str, _: &dyn askama::Values) -> ::askama::Result<String> {
+    Ok(s.lines().next().unwrap_or("").to_string())
 }
 
-pub fn strftime(datetime: &time::OffsetDateTime, s: &str) -> ::askama::Result<String> {
-    match time::format_description::parse(s) {
+fn strftime_impl(datetime: &time::OffsetDateTime, s: &str) -> ::askama::Result<String> {
+    match time::format_description::parse_borrowed::<2>(s) {
         Ok(fmt) => match datetime.format(&fmt) {
             Ok(res) => Ok(res),
             Err(e) => bail!("{}", e.to_string()),
@@ -49,23 +60,32 @@ pub fn strftime(datetime: &time::OffsetDateTime, s: &str) -> ::askama::Result<St
     }
 }
 
-pub fn strftime_i32(timestamp: &i32, s: &str) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn strftime(datetime: &time::OffsetDateTime, _: &dyn askama::Values, s: &str) -> ::askama::Result<String> {
+    strftime_impl(datetime, s)
+}
+
+#[askama::filter_fn]
+pub fn strftime_i32(timestamp: &i32, _: &dyn askama::Values, s: &str) -> ::askama::Result<String> {
     match time::OffsetDateTime::from_unix_timestamp(*timestamp as i64) {
-        Ok(datetime) => strftime(&datetime, s),
+        Ok(datetime) => strftime_impl(&datetime, s),
         Err(e) => bail!("{}", e.to_string()),
     }
 }
 
-pub fn sizeof_fmt(size: &i64) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn sizeof_fmt(size: &i64, _: &dyn askama::Values) -> ::askama::Result<String> {
     let size = size::Size::from_bytes(*size);
     Ok(size.to_string())
 }
 
-pub fn fmt_ver_compare(ver_compare: &i32) -> ::askama::Result<&'static str> {
+#[askama::filter_fn]
+pub fn fmt_ver_compare(ver_compare: &i32, _: &dyn askama::Values) -> ::askama::Result<&'static str> {
     Ok(ver_rel(*ver_compare))
 }
 
-pub fn fmt_pkg_status(status: &i32) -> ::askama::Result<&'static str> {
+#[askama::filter_fn]
+pub fn fmt_pkg_status(status: &i32, _: &dyn askama::Values) -> ::askama::Result<&'static str> {
     Ok(match *status {
         0 => "normal",
         2 => "testing",
@@ -73,7 +93,8 @@ pub fn fmt_pkg_status(status: &i32) -> ::askama::Result<&'static str> {
     })
 }
 
-pub fn sizeof_fmt_ls(num: &i64) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn sizeof_fmt_ls(num: &i64, _: &dyn askama::Values) -> ::askama::Result<String> {
     if num.abs() < 1024 {
         return Ok(num.to_string());
     }
@@ -92,7 +113,8 @@ pub fn sizeof_fmt_ls(num: &i64) -> ::askama::Result<String> {
     Ok(format!("{num:.1}Y"))
 }
 
-pub fn ls_perm(perm: &i32, ftype: &i16) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn ls_perm(perm: &i32, _: &dyn askama::Values, ftype: &i16) -> ::askama::Result<String> {
     // see https://docs.rs/tar/latest/src/tar/entry_type.rs.html#70-87
     let ftype = match ftype {
         1 => 'l',
@@ -112,7 +134,8 @@ pub fn ls_perm(perm: &i32, ftype: &i16) -> ::askama::Result<String> {
     Ok(format!("{ftype}{perm}"))
 }
 
-pub fn fmt_default<T: Display + Default>(x: &Option<T>) -> ::askama::Result<String> {
+#[askama::filter_fn]
+pub fn fmt_default<T: Display + Default>(x: &Option<T>, _: &dyn askama::Values) -> ::askama::Result<String> {
     if let Some(x) = x {
         Ok(format!("{x}"))
     } else {

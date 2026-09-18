@@ -1,3 +1,4 @@
+{% extends "base.html" %}
 {# macros for "pagination.inc.html" #}
 {% macro args(p) -%}?{{ "q={}&"|format(q)|d("",true) }}page={{ p }}{%- endmacro %}
 {% macro page_buttons(start, stop, current) -%}
@@ -5,7 +6,7 @@
     {% if current == number -%}
       <span class="page-btn">{{ number }}</span>
     {%- else -%}
-      <a class="page-btn" href="{% call args(number)  %}">{{ number }}</a>
+      <a class="page-btn" href="?q={{ q|d("", true) }}&page={{ number }}">{{ number }}</a>
     {%- endif %}
   {%- endfor %}
 {%- endmacro %}
@@ -13,7 +14,6 @@
   <span class="page-ellip">&hellip;</span>
 {%- endmacro %}
 
-{% extends "base.html" %}
 {% block title %}Search for "{{ q }}" - AOSC OS Packages{% endblock %}
 {% block banner %}<h1>Search for "{{ q }}"</h1>
 <p class="description">Found <span class="num">{{ page.count }} packages.</span></p>{% endblock %}
@@ -37,28 +37,40 @@
 {% if page.max > 1 -%}
 <div class="pagination">
   {% if page.cur > 1 -%}
-    <a class="page-btn" href="{% call args(page.cur - 1) %}">&laquo;</a>
+    <a class="page-btn" href="?q={{ q|d("", true) }}&page={{ page.cur - 1 }}">&laquo;</a>
   {%- endif %}
   {% if page.max > 9 -%}
     {% if page.cur < 6 -%}
       {% call page_buttons(1, 6, page.cur) %}
+      {% endcall %}
       {% call page_button_ellipsis() %}
+      {% endcall %}
       {% call page_buttons(page.max - 1, page.max, page.cur) %}
+      {% endcall %}
     {%- else if page.cur > page.max - 4 -%}
       {% call page_buttons(1, 2, page.cur) %}
+      {% endcall %}
       {% call page_button_ellipsis() %}
+      {% endcall %}
       {% call page_buttons(page.max - 4, page.max, page.cur) %}
+      {% endcall %}
     {%- else -%}
       {% call page_buttons(1, 2, page.cur) %}
+      {% endcall %}
       {% call page_button_ellipsis() %}
+      {% endcall %}
       {% call page_buttons(page.cur - 1, page.cur + 1, page.cur) %}
+      {% endcall %}
       {% call page_button_ellipsis() %}
+      {% endcall %}
       {% call page_buttons(page.max - 1, page.max, page.cur) %}
+      {% endcall %}
     {%- endif %}
   {%- else -%}
     {% call page_buttons(1, page.max, page.cur) %}
+    {% endcall %}
   {%- endif %}{% if page.cur < page.max -%}
-    <a class="page-btn" href="{% call args(page.cur + 1) %}">&raquo;</a>
+    <a class="page-btn" href="?q={{ q|d("", true) }}&page={{ page.cur + 1 }}">&raquo;</a>
   {%- endif %}
 </div>
 {%- endif %}

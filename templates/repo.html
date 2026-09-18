@@ -1,6 +1,5 @@
-{%- import "pagination.inc.macros.html" as macro -%}
-
 {% extends "base.html" %}
+{%- import "pagination.inc.macros.html" as macro -%}
 {% block title %}{{ repo }} - AOSC OS Packages{% endblock %}
 {% block banner %}<h1>{{ repo }}</h1>
 <p class="description"><span class="num">{{ page.count }} packages in "{{ repo }}".</span></p>

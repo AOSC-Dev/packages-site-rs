@@ -1,6 +1,5 @@
-{%- import "pagination.inc.macros.html" as macro -%}
-
 {% extends "base.html" %}
+{%- import "pagination.inc.macros.html" as macro -%}
 {% block title %}Missing packages in "{{ repo }}" - AOSC OS Packages{% endblock %}
 {% block banner %}<h1>Unavailable packages in "{{ repo }}"</h1>
 <p class="description">Found <span class="num">{{ page.count }} packages.</span></p>

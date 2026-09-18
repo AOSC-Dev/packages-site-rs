@@ -41,7 +41,7 @@
   </tr>
 
   {% for (category, repos) in repo_categories -%}
-  {% if !category.is_empty() & !repos.is_empty() -%}
+  {% if !category.is_empty() && !repos.is_empty() -%}
     <tr class="repo-row">
       <th class="repo-category" colspan="3">{{ category }}</th>
     </tr>
@@ -65,7 +65,7 @@
         <span class="repo-lagging tab num">
           <a href="/lagging/{{ repo.name }}" class="num">{{ repo.lagging }}</a>
         </span>
-        {% if (repo.testing == 0) & (repo.category != "overlay") -%}
+        {% if (repo.testing == 0) && (repo.category != "overlay") -%}
         <span class="repo-missing tab num">
           <a href="/missing/{{ repo.name }}" class="num">{{ repo.missing }}</a>
         </span>

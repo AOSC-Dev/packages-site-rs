@@ -8,28 +8,40 @@
 {% if page.max > 1 -%}
 <div class="pagination">
   {% if page.cur > 1 -%}
-    <a class="page-btn" href="{% call macro::args(page.cur - 1) %}">&laquo;</a>
+    <a class="page-btn" href="?page={{ page.cur - 1 }}">&laquo;</a>
   {%- endif %}
   {% if page.max > 9 -%}
     {% if page.cur < 6 -%}
       {% call macro::page_buttons(1, 6, page.cur) %}
+      {% endcall %}
       {% call macro::page_button_ellipsis() %}
+      {% endcall %}
       {% call macro::page_buttons(page.max - 1, page.max, page.cur) %}
+      {% endcall %}
     {%- else if page.cur > page.max - 4 -%}
       {% call macro::page_buttons(1, 2, page.cur) %}
+      {% endcall %}
       {% call macro::page_button_ellipsis() %}
+      {% endcall %}
       {% call macro::page_buttons(page.max - 4, page.max, page.cur) %}
+      {% endcall %}
     {%- else -%}
       {% call macro::page_buttons(1, 2, page.cur) %}
+      {% endcall %}
       {% call macro::page_button_ellipsis() %}
+      {% endcall %}
       {% call macro::page_buttons(page.cur - 1, page.cur + 1, page.cur) %}
+      {% endcall %}
       {% call macro::page_button_ellipsis() %}
+      {% endcall %}
       {% call macro::page_buttons(page.max - 1, page.max, page.cur) %}
+      {% endcall %}
     {%- endif %}
   {%- else -%}
     {% call macro::page_buttons(1, page.max, page.cur) %}
+    {% endcall %}
   {%- endif %}{% if page.cur < page.max -%}
-    <a class="page-btn" href="{% call macro::args(page.cur + 1) %}">&raquo;</a>
+    <a class="page-btn" href="?page={{ page.cur + 1 }}">&raquo;</a>
   {%- endif %}
 </div>
 {%- endif %}

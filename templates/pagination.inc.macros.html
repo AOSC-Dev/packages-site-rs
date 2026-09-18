@@ -5,7 +5,7 @@
     {% if current == number -%}
       <span class="page-btn">{{ number }}</span>
     {%- else -%}
-      <a class="page-btn" href="{% call args(number)  %}">{{ number }}</a>
+      <a class="page-btn" href="?page={{ number }}">{{ number }}</a>
     {%- endif %}
   {%- endfor %}
 {%- endmacro %}
