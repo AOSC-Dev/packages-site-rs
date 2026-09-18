@@ -24,7 +24,6 @@ sqlx = { version = "0.9", features = [
 serde = { version = "^1", features = ["derive"] }
 toml = "1.1"
 anyhow = "^1"
-async-trait = "0.1"
 askama = "0.16"
 thiserror = "2"
 time = { version = "0.3", default-features = false, features = ["formatting", "serde"] }

@@ -1,6 +1,5 @@
 use crate::config::Config;
 use anyhow::Result;
-use async_trait::async_trait;
 use itertools::Itertools;
 use serde::Serialize;
 use sqlx::{pool::PoolOptions, query::QueryAs, Database, Executor, FromRow, IntoArguments, Pool, Postgres};
@@ -28,7 +27,6 @@ pub struct Page {
     pub count: u32,
 }
 
-#[async_trait]
 pub trait Paginator<'q, DB, O, A>
 where
     DB: Database,
@@ -45,14 +43,13 @@ where
         A: 'e;
 }
 
-#[async_trait]
 impl<'q, DB, O, A> Paginator<'q, DB, O, A> for QueryAs<'q, DB, O, A>
 where
     DB: Database,
     A: 'q + IntoArguments<DB>,
     O: Send + Unpin + for<'r> FromRow<'r, DB::Row>,
 {
-    async fn fetch_page<'e, 'c: 'e, E>(mut self, executor: E, cur: Option<u32>) -> Result<(Vec<O>, Page), sqlx::Error>
+    async fn fetch_page<'e, 'c: 'e, E>(self, executor: E, cur: Option<u32>) -> Result<(Vec<O>, Page), sqlx::Error>
     where
         'q: 'e,
         Self: Sized,
