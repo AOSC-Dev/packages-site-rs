@@ -8,48 +8,48 @@ authors = ["zrah <zrah@protonmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6", features = ["headers"] }
-axum-macros = "0.3"
-axum-extra = { version = "0.7", features = ["typed-routing"] }
-tower-http = { version = "0.4", features = ["trace", "fs"] }
+axum = "0.8"
+axum-macros = "0.5"
+axum-extra = { version = "0.12", features = ["typed-routing"] }
+tower-http = { version = "0.7", features = ["trace", "fs"] }
 tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-sqlx = { version = "0.8", features = [
+sqlx = { version = "0.9", features = [
     "postgres",
-    "runtime-tokio-rustls",
+    "runtime-tokio",
+    "tls-rustls-ring",
     "time"
 ] }
 serde = { version = "^1", features = ["derive"] }
-toml = "0.7"
+toml = "1.1"
 anyhow = "^1"
-askama = "0.12"
-thiserror = "^1"
+async-trait = "0.1"
+askama = "0.16"
+thiserror = "2"
 time = { version = "0.3", default-features = false, features = ["formatting", "serde"] }
 textwrap = "0.16"
-rust-embed = "^6"
+rust-embed = "8"
 mime_guess = "^2"
 deb-version = "0.1"
 serde_json = "^1"
-indexmap = { version = "^1", features = ["serde"] }
+indexmap = { version = "2", features = ["serde"] }
 html-escape = "0.2"
 abbs-meta-tree = { git = "https://github.com/AoSC-Dev/abbs-meta-rs" }
-size = "0.4"
-itertools = "0.10"
+size = "0.5"
+itertools = "0.15"
 hex = "0.4"
 proc-macro-regex = "^1"
-structopt = "0.3"
-hyper = "0.14"
-hyperlocal = "0.8"
-opentelemetry-otlp = { version = "0.15.0", features = ["http-proto", "reqwest-client"] }
-opentelemetry = "0.22.0"
-tracing-opentelemetry = "0.23.0"
-opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio"] }
-reqwest = "0.11.24"
+clap = { version = "4.5", features = ["derive"] }
+opentelemetry-otlp = { version = "0.32", features = ["http-proto", "reqwest-client"] }
+opentelemetry = "0.32"
+tracing-opentelemetry = "0.33"
+opentelemetry_sdk = { version = "0.32", features = ["rt-tokio"] }
+reqwest = "0.13"
 
 [profile.dev.package.askama_derive]
 opt-level = 3
-
+ 
 [profile.release]
 lto = "fat"
 codegen-units = 1
