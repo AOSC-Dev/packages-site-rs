@@ -8,12 +8,13 @@ macro_rules! bail {
 }
 
 #[askama::filter_fn]
-pub fn d(s: &str, _: &dyn askama::Values, default: &str, consider_empty: bool) -> ::askama::Result<String> {
+pub fn d<'a>(s: &'a str, _: &dyn askama::Values, default: &'a str, consider_empty: bool) -> ::askama::Result<&'a str> {
     let _ = consider_empty;
+
     if !s.is_empty() {
-        Ok(s.to_string())
+        Ok(s)
     } else {
-        Ok(default.to_string())
+        Ok(default)
     }
 }
 
@@ -22,15 +23,16 @@ pub fn fmt_timestamp(timestamp: &time::OffsetDateTime, _: &dyn askama::Values) -
     if let Ok(date) = timestamp.format(&time::format_description::well_known::Rfc2822) {
         return Ok(date);
     }
+
     bail!("cannot format timestamp {timestamp} into RFC2822 format")
 }
 
 #[askama::filter_fn]
-pub fn cut(s: &str, _: &dyn askama::Values, len: usize) -> ::askama::Result<String> {
+pub fn cut<'a>(s: &'a str, _: &dyn askama::Values, len: usize) -> ::askama::Result<&'a str> {
     if s.len() <= len {
-        Ok(s.to_string())
+        Ok(s)
     } else {
-        Ok(s[..len].to_string())
+        Ok(&s[..len])
     }
 }
 
@@ -46,8 +48,8 @@ pub fn fill<S: AsRef<str>>(
 }
 
 #[askama::filter_fn]
-pub fn get_first_line(s: &str, _: &dyn askama::Values) -> ::askama::Result<String> {
-    Ok(s.lines().next().unwrap_or("").to_string())
+pub fn get_first_line<'a>(s: &'a str, _: &dyn askama::Values) -> ::askama::Result<&'a str> {
+    Ok(s.lines().next().unwrap_or(""))
 }
 
 fn strftime_impl(datetime: &time::OffsetDateTime, s: &str) -> ::askama::Result<String> {
