@@ -1,6 +1,6 @@
 use crate::config::Config;
 use anyhow::Result;
-use axum::async_trait;
+use async_trait::async_trait;
 use itertools::Itertools;
 use serde::Serialize;
 use sqlx::{pool::PoolOptions, query::QueryAs, Database, Executor, FromRow, IntoArguments, Pool, Postgres};
@@ -32,7 +32,7 @@ pub struct Page {
 pub trait Paginator<'q, DB, O, A>
 where
     DB: Database,
-    A: 'q + IntoArguments<'q, DB>,
+    A: 'q + IntoArguments<DB>,
     O: Send + Unpin + for<'r> FromRow<'r, DB::Row>,
 {
     async fn fetch_page<'e, 'c: 'e, E>(self, executor: E, cur: Option<u32>) -> Result<(Vec<O>, Page), sqlx::Error>
@@ -49,7 +49,7 @@ where
 impl<'q, DB, O, A> Paginator<'q, DB, O, A> for QueryAs<'q, DB, O, A>
 where
     DB: Database,
-    A: 'q + IntoArguments<'q, DB>,
+    A: 'q + IntoArguments<DB>,
     O: Send + Unpin + for<'r> FromRow<'r, DB::Row>,
 {
     async fn fetch_page<'e, 'c: 'e, E>(mut self, executor: E, cur: Option<u32>) -> Result<(Vec<O>, Page), sqlx::Error>
@@ -63,7 +63,7 @@ where
     {
         let v = self.fetch_all(executor).await?;
         let count = v.len() as u32;
-        let ceil = |a, b| (a + b - 1) / b;
+        let ceil = |a: u32, b: u32| a.div_ceil(b);
 
         let (res, page) = if let Some(cur) = cur {
             let res = v

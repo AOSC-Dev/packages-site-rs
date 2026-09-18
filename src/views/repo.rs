@@ -8,7 +8,7 @@ use itertools::Itertools;
 use serde::Serialize;
 use sqlx::{query_as, FromRow};
 
-typed_path!("/repo/*repo", RouteRepo, repo);
+typed_path!("/repo/{*repo}", RouteRepo, repo);
 pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow)]
     struct Package {
@@ -86,7 +86,7 @@ pub async fn repo(RouteRepo { repo }: RouteRepo, q: Query, db: Ext) -> Result<im
     render(ctx, Some(ctx_tsv), &q)
 }
 
-typed_path!("/lagging/*repo", Lagging, repo);
+typed_path!("/lagging/{*repo}", Lagging, repo);
 pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow, Debug, Serialize)]
     struct Package {
@@ -133,7 +133,7 @@ pub async fn lagging(Lagging { repo }: Lagging, q: Query, db: Ext) -> Result<imp
     render(ctx, Some(ctx_tsv), &q)
 }
 
-typed_path!("/missing/*repo", Missing, repo);
+typed_path!("/missing/{*repo}", Missing, repo);
 pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow, Debug, Serialize)]
     struct Package {
@@ -183,7 +183,7 @@ pub async fn missing(Missing { repo }: Missing, q: Query, db: Ext) -> Result<imp
     render(ctx, Some(ctx_tsv), &q)
 }
 
-typed_path!("/ghost/*repo", Ghost, repo);
+typed_path!("/ghost/{*repo}", Ghost, repo);
 pub async fn ghost(Ghost { repo }: Ghost, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(Debug, FromRow, Serialize)]
     struct Package {

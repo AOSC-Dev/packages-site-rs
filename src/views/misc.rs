@@ -1,7 +1,7 @@
 use crate::sql::*;
 use crate::utils::*;
 use askama::Template;
-use axum::body::{boxed, Full};
+use axum::body::Body;
 use axum::http::header;
 use axum::response::IntoResponse;
 use axum::response::Response;
@@ -11,7 +11,7 @@ use serde::Serialize;
 use sqlx::{query_as, FromRow};
 use std::collections::{HashMap, HashSet};
 
-typed_path!("/static/*path", StaticFiles, path);
+typed_path!("/static/{*path}", StaticFiles, path);
 pub async fn static_files(StaticFiles { path }: StaticFiles) -> Result<impl IntoResponse> {
     #[derive(rust_embed::RustEmbed)]
     #[folder = "static"]
@@ -19,7 +19,7 @@ pub async fn static_files(StaticFiles { path }: StaticFiles) -> Result<impl Into
 
     match Asset::get(path.as_str().trim_start_matches('/')) {
         Some(content) => {
-            let body = boxed(Full::from(content.data));
+            let body = Body::from(content.data);
             let mime = mime_guess::from_path(path).first_or_octet_stream();
             Ok(Response::builder()
                 .header(header::CONTENT_TYPE, mime.as_ref())
@@ -46,7 +46,7 @@ pub async fn pkgtrie(_: PkgTrie, db: Ext) -> Result<impl IntoResponse> {
         fn insert(&mut self, word: &str) {
             let mut cur = self;
             for c in word.chars() {
-                cur = cur.children.entry(c).or_insert_with(Default::default);
+                cur = cur.children.entry(c).or_default();
             }
             cur.is_end = true;
         }
@@ -127,7 +127,7 @@ pub async fn pkglist(_: PkgList, db: Ext) -> Result<impl IntoResponse> {
     Ok(build_resp(mime::APPLICATION_JSON.as_ref(), json))
 }
 
-typed_path!("/cleanmirror/*repo", CleanMirror, repo);
+typed_path!("/cleanmirror/{*repo}", CleanMirror, repo);
 pub async fn cleanmirror(CleanMirror { repo }: CleanMirror, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let reason: Option<HashSet<_>> = q
         .get_reason()

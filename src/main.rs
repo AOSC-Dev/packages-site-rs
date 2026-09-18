@@ -1,6 +1,6 @@
 mod config;
 mod db;
-mod filters;
+pub mod filters;
 mod sql;
 mod utils;
 mod views;
@@ -8,12 +8,11 @@ mod views;
 use anyhow::Result;
 use axum::{Extension, Router};
 use axum_extra::routing::RouterExt;
+use clap::Parser;
 use config::Config;
-use hyper::Server;
-use hyperlocal::UnixServerExt;
+use opentelemetry::trace::TracerProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use std::sync::Arc;
-use structopt::StructOpt;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
@@ -23,17 +22,17 @@ use views::*;
 
 const UNIX_SOCKET_PREFIX: &str = "unix:";
 
-#[derive(StructOpt, Debug)]
-#[structopt(name = "packages-site")]
+#[derive(Parser, Debug)]
+#[command(name = "packages-site")]
 struct Opt {
     /// specify configuration file
-    #[structopt(short, long, default_value = "config.toml")]
+    #[arg(short, long, default_value = "config.toml")]
     config: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
     let config = Config::from_file(opt.config)?;
 
     let subscriber = tracing_subscriber::Registry::default();
@@ -42,18 +41,24 @@ async fn main() -> Result<()> {
         log = config.global.log,
         sqlx_log = config.global.sqlx_log
     ));
-    if let Some(otlp_url) = &config.global.otlp_url {
+
+    let _otel_provider = if let Some(otlp_url) = &config.global.otlp_url {
         // setup otlp
-        let exporter = opentelemetry_otlp::new_exporter().http().with_endpoint(otlp_url);
-        let otlp_tracer = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_trace_config(
-                opentelemetry_sdk::trace::config().with_resource(opentelemetry_sdk::Resource::new(vec![
-                    opentelemetry::KeyValue::new("service.name", "packages-site"),
-                ])),
-            )
-            .with_exporter(exporter)
-            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_http()
+            .with_endpoint(otlp_url)
+            .build()?;
+
+        let resource = opentelemetry_sdk::Resource::builder()
+            .with_service_name("packages-site")
+            .build();
+
+        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+            .with_resource(resource)
+            .with_batch_exporter(exporter)
+            .build();
+
+        let otlp_tracer = provider.tracer("packages-site");
 
         // let tracing crate output to opentelemetry
         let tracing_leyer = tracing_opentelemetry::layer().with_tracer(otlp_tracer);
@@ -62,13 +67,17 @@ async fn main() -> Result<()> {
             .with(tracing_leyer)
             .with(tracing_subscriber::fmt::Layer::default())
             .init();
+
+        Some(provider)
     } else {
         // fallback to stdout
         subscriber
             .with(env_filter)
             .with(tracing_subscriber::fmt::Layer::default())
             .init();
-    }
+
+        None
+    };
 
     let db = Arc::new(db::Db::open(&config).await?);
 
@@ -102,11 +111,13 @@ async fn main() -> Result<()> {
     let listen = &config.global.listen;
     if let Some(socket) = listen.strip_prefix(UNIX_SOCKET_PREFIX) {
         info!("package-site is listening on unix socket: {}", socket);
-        Server::bind_unix(socket)?.serve(service).await?;
+        let listener = tokio::net::UnixListener::bind(socket)?;
+        axum::serve(listener, service).await?;
     } else {
-        let addr = listen.parse()?;
+        let addr = listen.parse::<std::net::SocketAddr>()?;
         info!("package-site is listening on: {}", addr);
-        Server::bind(&addr).serve(service).await?;
+        let listener = tokio::net::TcpListener::bind(addr).await?;
+        axum::serve(listener, service).await?;
     }
 
     Ok(())
