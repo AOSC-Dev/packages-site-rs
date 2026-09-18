@@ -15,7 +15,7 @@ tower-http = { version = "0.7", features = ["trace", "fs"] }
 tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-sqlx = { version = "0.9", features = [
+sqlx = { git = "https://github.com/transact-rs/sqlx", rev = "f8afe99dc92b903d04b4a87bd6cbfcb13b5e615c", features = [
     "postgres",
     "runtime-tokio",
     "tls-rustls-ring",
