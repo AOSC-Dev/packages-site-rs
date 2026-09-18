@@ -2,7 +2,6 @@ use crate::db::Db;
 use crate::sql::SQL_GET_REPO_COUNT;
 use crate::sql::SQL_GET_TREES;
 use askama::Template;
-use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http;
 use axum::http::header;
@@ -20,6 +19,7 @@ use serde::Serialize;
 use sqlx::query_as;
 use sqlx::FromRow;
 use std::collections::HashMap;
+use std::future::Future;
 use std::sync::Arc;
 use tracing::error;
 
@@ -108,7 +108,7 @@ pub fn into_response<T: Template>(t: &T, mine: Option<&'static str>) -> Response
         Ok(body) => {
             let headers = [(
                 http::header::CONTENT_TYPE,
-                http::HeaderValue::from_static(mine.unwrap_or(T::MIME_TYPE)),
+                http::HeaderValue::from_static(mine.unwrap_or("text/html; charset=utf-8")),
             )];
 
             (headers, body).into_response()
@@ -153,27 +153,31 @@ pub struct QueryExtractor {
     r#type: Option<String>,
 }
 
-#[async_trait]
 impl<S> FromRequestParts<S> for QueryExtractor
 where
     S: Send + Sync,
 {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> std::result::Result<Self, Self::Rejection> {
+    fn from_request_parts(
+        parts: &mut Parts,
+        state: &S,
+    ) -> impl Future<Output = std::result::Result<Self, Self::Rejection>> + Send {
         use axum::extract::Query;
-        let mut res = Query::<QueryExtractor>::from_request_parts(parts, state).await?.0;
+        async move {
+            let mut res = Query::<QueryExtractor>::from_request_parts(parts, state).await?.0;
 
-        if parts
-            .headers
-            .get("X-Requested-With")
-            .and_then(|h| h.eq("XMLHttpRequest").then_some(()))
-            .is_some()
-        {
-            res.r#type = Some("json".into());
+            if parts
+                .headers
+                .get("X-Requested-With")
+                .and_then(|h| h.eq("XMLHttpRequest").then_some(()))
+                .is_some()
+            {
+                res.r#type = Some("json".into());
+            }
+
+            Ok(res)
         }
-
-        Ok(res)
     }
 }
 
@@ -308,7 +312,7 @@ impl Dependency {
             let relationship = iter.next().unwrap_or("");
             let arch = iter.next().unwrap_or("");
 
-            let inner = map.entry(relationship.into()).or_insert_with(HashMap::new);
+            let inner = map.entry(relationship.into()).or_default();
             inner
                 .entry(arch.into())
                 .or_insert(vec![])

@@ -10,9 +10,9 @@ use itertools::Itertools;
 use serde::Serialize;
 use sqlx::{query, query_as, FromRow};
 use std::collections::{HashMap, HashSet};
-use std::iter::repeat;
+use std::iter::repeat_n;
 
-typed_path!("/packages/:name", RoutePackage, name);
+typed_path!("/packages/{name}", RoutePackage, name);
 pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(FromRow, Debug, Serialize)]
     struct Package {
@@ -208,8 +208,8 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
                 (None, Some(src_branch)) => {
                     let url = format!(
                         "https://github.com/AOSC-Dev/{tree}/tree/{src_branch}/{spec_path}",
-                        tree = &pkg.tree,
-                        spec_path = &pkg.spec_path
+                        tree = pkg.tree,
+                        spec_path = pkg.spec_path
                     );
 
                     Version {
@@ -265,7 +265,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
         .iter()
         .map(|repo| {
             if !dpkg_repos.contains(repo) {
-                let meta = repeat(DpkgMeta::default()).take(versions.len()).collect();
+                let meta = repeat_n(DpkgMeta::default(), versions.len()).collect();
                 let row = MatrixRow {
                     repo: repo.clone(),
                     meta,
@@ -369,7 +369,7 @@ pub async fn packages(RoutePackage { name }: RoutePackage, q: Query, db: Ext) ->
     render::<_, Template>(ctx, None, &q)
 }
 
-typed_path!("/changelog/:name", Changelog, name);
+typed_path!("/changelog/{name}", Changelog, name);
 pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Result<impl IntoResponse> {
     #[derive(Debug, FromRow, Serialize)]
     struct Change {
@@ -405,7 +405,7 @@ pub async fn changelog(Changelog { name }: Changelog, q: Query, db: Ext) -> Resu
     render::<_, Template>(ctx, None, &q)
 }
 
-typed_path!("/revdep/:name", Revdep, name);
+typed_path!("/revdep/{name}", Revdep, name);
 pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl IntoResponse> {
     let res = query("SELECT 1 FROM packages WHERE name = $1")
         .bind(&name)
@@ -462,7 +462,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 
     let deps_map: IndexMap<_, _> = deps
         .iter()
-        .group_by(|dep| &dep.relationship)
+        .chunk_by(|dep| &dep.relationship)
         .into_iter()
         .map(|(k, v)| (k, v.collect_vec()))
         .collect();
@@ -472,7 +472,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
         .filter_map(|(relationship, description)| {
             if let Some(deps) = deps_map.get(&relationship.to_string()) {
                 let mut res = vec![];
-                for (_, pkggroup) in &deps.iter().group_by(|dep| &dep.package) {
+                for (_, pkggroup) in &deps.iter().chunk_by(|dep| &dep.package) {
                     let mut pkggroup = pkggroup.collect_vec();
                     if let Some(dep) = pkggroup.iter().find(|dep| dep.architecture.is_empty()) {
                         res.push(*dep);
@@ -538,7 +538,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 
     let mut sorevdeps_grouped: HashMap<String, Vec<String>> = HashMap::new();
     for (k, v) in sorevdeps {
-        sorevdeps_grouped.entry(k).or_insert_with(Vec::new).push(v);
+        sorevdeps_grouped.entry(k).or_default().push(v);
     }
 
     let ctx = Template {
@@ -560,7 +560,7 @@ pub async fn revdep(Revdep { name }: Revdep, q: Query, db: Ext) -> Result<impl I
 }
 
 typed_path!(
-    "/files/:reponame/:branch/:name/:version",
+    "/files/{reponame}/{branch}/{name}/{version}",
     Files,
     reponame,
     branch,
